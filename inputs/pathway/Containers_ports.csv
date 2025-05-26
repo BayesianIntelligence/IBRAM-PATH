@@ -1,0 +1,16 @@
+id,port,portId,item,itemId,yearlyItemUnits,yearlyItemUnitsSpread,timeAtSite,proportionToHere,id,type,name,note,lat,lon,X,Y
+16,Auckland,1,Sea containers,2,0,0.1,"Normal(3,0.5)",0.334537,1,sea,Auckland,,-36.8447,174.785,1759110,5920870
+17,Bluff,2,Sea containers,2,0,0.1,"Normal(3,0.5)",0,2,sea,Bluff,regional,-46.597,168.33,1242350,4829010
+18,Dunedin,3,Sea containers,2,0,0.1,"Normal(3,0.5)",0.0780967,3,sea,Dunedin,,-45.8728,170.522,1407660,4917100
+19,Gisborne,4,Sea containers,2,0,0.1,,0,4,sea,Gisborne,,-38.6752,178.025,2037220,5707270
+20,Lyttelton,5,Sea containers,2,0,0.1,"Normal(3,0.5)",0.152775,5,sea,Lyttelton,,-43.6083,172.726,1577890,5171600
+21,Napier,6,Sea containers,2,0,0.1,"Normal(3,0.5)",0.0858041,6,sea,Napier,,-39.4785,176.92,1937200,5622780
+22,Nelson,7,Sea containers,2,0,0.1,"Normal(3,0.5)",0,7,sea,Nelson,,-41.2633,173.277,1623180,5431970
+23,New Plymouth,8,Sea containers,2,0,0.1,"Normal(3,0.5)",0,8,sea,New Plymouth,,-39.0619,174.041,1690060,5675830
+24,Opua (Bay of Islands),9,Sea containers,2,0,0.1,,0,9,sea,Opua (Bay of Islands),,-35.315,174.12,1701770,6091440
+25,Picton,10,Sea containers,2,0,0.1,,0,10,sea,Picton,,-41.2895,174.006,1684210,5428620
+26,Port Chalmers,11,Sea containers,2,0,0.1,"Normal(3,0.5)",0,11,sea,Port Chalmers,,-45.814,170.623,1415330,4923870
+27,Tauranga,12,Sea containers,2,0,0.1,"Normal(3,0.5)",0.311041,12,sea,Tauranga,,-37.6406,176.182,1880760,5829290
+28,Timaru,13,Sea containers,2,0,0.1,"Normal(3,0.5)",0,13,sea,Timaru,,-44.3922,171.253,1460870,5083080
+29,Wellington,14,Sea containers,2,0,0.1,"Normal(3,0.5)",0.0377458,14,sea,Wellington,,-41.2782,174.786,1749560,5428820
+30,Whangarei,15,Sea containers,2,0,0.1,,0,15,sea,Whangarei,,-35.8379,174.485,1734140,6033020

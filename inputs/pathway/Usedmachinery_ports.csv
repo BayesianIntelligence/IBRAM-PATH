@@ -1,0 +1,16 @@
+id,port,portId,item,itemId,yearlyItemUnits,yearlyItemUnitsSpread,timeAtSite,proportionToHere,id,type,name,note,lat,lon,X,Y
+97,Auckland,1,Used machinery,8,0,0.1,"Normal(0.5,0.1)",0.728328,1,sea,Auckland,,-36.8447,174.785,1759110,5920870
+98,Bluff,2,Used machinery,8,0,0.1,"Normal(0.5,0.1)",0,2,sea,Bluff,regional,-46.597,168.33,1242350,4829010
+99,Dunedin,3,Used machinery,8,0,0.1,"Normal(0.5,0.1)",1.52E-02,3,sea,Dunedin,,-45.8728,170.522,1407660,4917100
+100,Gisborne,4,Used machinery,8,0,0.1,,0,4,sea,Gisborne,,-38.6752,178.025,2037220,5707270
+101,Lyttelton,5,Used machinery,8,0,0.1,"Normal(0.5,0.1)",0.00404252,5,sea,Lyttelton,,-43.6083,172.726,1577890,5171600
+102,Napier,6,Used machinery,8,0,0.1,"Normal(0.5,0.1)",0.0378051,6,sea,Napier,,-39.4785,176.92,1937200,5622780
+103,Nelson,7,Used machinery,8,0,0.1,"Normal(0.5,0.1)",0.033538,7,sea,Nelson,,-41.2633,173.277,1623180,5431970
+104,New Plymouth,8,Used machinery,8,0,0.1,"Normal(0.5,0.1)",0,8,sea,New Plymouth,,-39.0619,174.041,1690060,5675830
+105,Opua (Bay of Islands),9,Used machinery,8,0,0.1,,0,9,sea,Opua (Bay of Islands),,-35.315,174.12,1701770,6091440
+106,Picton,10,Used machinery,8,0,0.1,,0,10,sea,Picton,,-41.2895,174.006,1684210,5428620
+107,Port Chalmers,11,Used machinery,8,0,0.1,"Normal(0.5,0.1)",0,11,sea,Port Chalmers,,-45.814,170.623,1415330,4923870
+108,Tauranga,12,Used machinery,8,0,0.1,"Normal(0.5,0.1)",1.99E-02,12,sea,Tauranga,,-37.6406,176.182,1880760,5829290
+109,Timaru,13,Used machinery,8,0,0.1,"Normal(0.5,0.1)",0,13,sea,Timaru,,-44.3922,171.253,1460870,5083080
+110,Wellington,14,Used machinery,8,0,0.1,"Normal(0.5,0.1)",1.61E-01,14,sea,Wellington,,-41.2782,174.786,1749560,5428820
+111,Whangarei,15,Used machinery,8,0,0.1,,0,15,sea,Whangarei,,-35.8379,174.485,1734140,6033020
