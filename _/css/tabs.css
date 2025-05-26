@@ -1,0 +1,5 @@
+.tabSet .tabButtons button { border: solid 1px #ccc; background: white; border-radius: 5px 5px 0 0;
+	position: relative; z-index: 10; margin-right: -1px; }
+.tabSet .tabButtons button.selected { border-bottom: solid 1px white; font-size: 110%; z-index: 20; position: relative; }
+.tabSheet { display: none; border: solid 1px #ccc; margin-top: -1px; }
+.tabSheet.active { display: block; }

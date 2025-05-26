@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<smile version="1.0" id="Network2" numsamples="1000" discsamples="10000">
+	<nodes>
+		<equation id="IR">
+			<definition lower="0" upper="1">IR=0.01</definition>
+		</equation>
+		<equation id="IDR">
+			<definition lower="0" upper="1">IDR=0.00812683</definition>
+		</equation>
+		<equation id="ITE">
+			<definition lower="0" upper="1">ITE=1</definition>
+		</equation>
+		<equation id="ITRUD">
+			<definition>ITRUD=0.999</definition>
+		</equation>
+		<equation id="ITR">
+			<parents>IDR ITE ITRUD</parents>
+			<definition lower="0" upper="1">ITR=IDR*ITE+(1-IDR)*ITRUD</definition>
+		</equation>
+		<equation id="IIR">
+			<definition>IIR=0.01</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="BIIR">
+			<parents>IIR ITR</parents>
+			<definition lower="0" upper="1">BIIR=IIR*(1-ITR)</definition>
+			<discretization>
+				<interval label="State0" upper="0.5" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="IVTR">
+			<definition>IVTR=0.5</definition>
+		</equation>
+		<equation id="VDR">
+			<definition lower="0" upper="1">VDR=0.00812683</definition>
+		</equation>
+		<equation id="VTE">
+			<definition lower="0" upper="1">VTE=1</definition>
+		</equation>
+		<equation id="VTRUD">
+			<definition>VTRUD=0.999</definition>
+		</equation>
+		<equation id="VTR">
+			<parents>VDR VTE VTRUD</parents>
+			<definition lower="0" upper="1">VTR=VDR*VTE+(1-VDR)*VTRUD</definition>
+		</equation>
+		<equation id="BIR">
+			<parents>IR VTR</parents>
+			<definition lower="0" upper="1">BIR=IR*(1-VTR)</definition>
+		</equation>
+		<equation id="VpU">
+			<definition>VpU=Normal(18,2)</definition>
+		</equation>
+		<equation id="Units">
+			<definition lower="0" upper="100000000000000">Units=395486</definition>
+			<discretization>
+				<interval label="State0" upper="1000000" />
+				<interval label="State1" upper="100000000000000" />
+			</discretization>
+		</equation>
+		<equation id="EVIR">
+			<definition>EVIR=0.01</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="Vectors">
+			<parents>VpU BIR Units</parents>
+			<definition>Vectors=Units*BIR*VpU</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="VIR">
+			<parents>EVIR IVTR BIIR</parents>
+			<definition>VIR=1-(1-EVIR)*(1-IVTR*BIIR)</definition>
+		</equation>
+		<equation id="Infected_Vectors">
+			<parents>Vectors VIR</parents>
+			<definition>Infected_Vectors=Vectors*VIR</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="Infected_Units">
+			<parents>BIIR Units</parents>
+			<definition>Infected_Units=Units*BIIR</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+	</nodes>
+	<extensions>
+		<genie version="1.0" app="GeNIe 4.1.3402.2 1d9f5773304b480" name="Network2">
+			<node id="IR">
+				<name>Infestation Rate</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>175 293 278 357</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="VTR">
+				<name>Vector Treatment Rate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>319 293 422 357</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="VpU">
+				<name>Vectors Per Unit</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>66 433 169 497</position>
+				<barchart active="true" width="128" height="108" />
+			</node>
+			<node id="Vectors">
+				<name>Vectors</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>157 591 260 655</position>
+				<barchart active="true" width="128" height="108" />
+			</node>
+			<node id="BIR">
+				<name>Border Infestation Rate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>249 441 352 505</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="Units">
+				<name>Units</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>584 592 687 656</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="EVIR">
+				<name>Env Vector Infection Rate</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>468 347 571 411</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="IIR">
+				<name>Item Infection Rate</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>733 298 836 362</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="Infected_Vectors">
+				<name>Infected Vectors</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>408 826 511 890</position>
+				<barchart active="true" width="128" height="108" />
+			</node>
+			<node id="Infected_Units">
+				<name>Infected Units</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>727 824 830 888</position>
+				<barchart active="true" width="128" height="108" />
+			</node>
+			<node id="ITR">
+				<name>Item Treatment Rate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>885 299 988 363</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="BIIR">
+				<name>Border Item Infection Rate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>820 444 923 508</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="IVTR">
+				<name>Item Vector Transmission Rate</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>603 348 706 412</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="VIR">
+				<name>Vector Infection Rate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>535 443 638 507</position>
+				<barchart active="true" width="128" height="108" />
+			</node>
+			<node id="VDR">
+				<name>Vector Detection Rate</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>179 181 276 241</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="VTE">
+				<name>Vector Treatment Efficacy</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>322 181 419 241</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="VTRUD">
+				<name>Vector Treatment Rate for Undetected</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>456 181 553 241</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="IDR">
+				<name>Item Detection Rate</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>750 187 847 247</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="ITE">
+				<name>Item Treatment Efficacy</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>888 187 985 247</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+			<node id="ITRUD">
+				<name>Item Treatment Rate for Undetected</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1022 187 1119 247</position>
+				<barchart active="true" width="128" height="36" />
+			</node>
+		</genie>
+	</extensions>
+</smile>

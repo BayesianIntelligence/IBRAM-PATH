@@ -1,0 +1,15 @@
+future
+numpy
+pandas
+cherrypy
+logging
+xlrd
+xlwt
+psutil
+openpyxl
+fiona
+rtree
+rasterio
+pyproj
+shapely
+Jinja2

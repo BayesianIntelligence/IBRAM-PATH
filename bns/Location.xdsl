@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- This network was created in GeNIe Academic, which can be used for educational and research purposes only -->
+<smile version="1.0" id="Network1" numsamples="10000" discsamples="10000">
+	<nodes>
+		<equation id="Pests__t_1__">
+			<definition>Pests__t_1__=0</definition>
+			<property id="dynamic">Pests</property>
+		</equation>
+		<equation id="LU">
+			<definition>LU=0</definition>
+		</equation>
+		<equation id="LS">
+			<parents>LU</parents>
+			<definition lower="0" upper="2">LS=Switch(LU,0,1,1,2,2,2,3,2,4,2,5,0,6,2,7,0,8,2,9,3,10,2,11,0,12,2)</definition>
+		</equation>
+		<equation id="GS">
+			<definition>GS=0</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="EI">
+			<definition lower="0" upper="100">EI=Uniform(0,100)</definition>
+			<discretization>
+				<interval label="State0" upper="50" />
+				<interval label="State1" upper="100" />
+			</discretization>
+		</equation>
+		<equation id="GI">
+			<definition lower="0" upper="100">GI=Uniform(0,100)</definition>
+			<discretization>
+				<interval label="State0" upper="50" />
+				<interval label="State1" upper="100" />
+			</discretization>
+		</equation>
+		<equation id="CI">
+			<parents>GS EI GI</parents>
+			<definition>CI=If(GS=1,GI,EI)</definition>
+		</equation>
+		<equation id="CS">
+			<parents>CI</parents>
+			<definition lower="0" upper="5">CS=If(CI&gt;=20,3,If(CI&gt;=5,2,If(CI&gt;=0.5,1,0)))</definition>
+		</equation>
+		<equation id="Habitat_Suitability">
+			<parents>LS CS</parents>
+			<definition lower="0" upper="2">Habitat_Suitability=Min(CS,LS)</definition>
+		</equation>
+		<equation id="Dieoff">
+			<parents>Habitat_Suitability</parents>
+			<definition>Dieoff=Switch(Habitat_Suitability,0,1,1,0.15,2,0.1,3,0.05)</definition>
+		</equation>
+		<equation id="x_p_">
+			<parents>Dieoff</parents>
+			<definition>x_p_=Dieoff</definition>
+		</equation>
+		<equation id="x_n_">
+			<parents>Pests__t_1__</parents>
+			<definition>x_n_=Pests__t_1__</definition>
+		</equation>
+		<equation id="Area">
+			<definition>Area=100</definition>
+		</equation>
+		<equation id="Disperse_Pests_Count">
+			<definition>Disperse_Pests_Count=Uniform(0,100)</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Disperse_Pests_Density">
+			<parents>Area Disperse_Pests_Count</parents>
+			<definition>Disperse_Pests_Density=If(Area&lt;0.1,0,Disperse_Pests_Count/Area)</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="x_Pests">
+			<parents>x_p_ x_n_ Disperse_Pests_Density</parents>
+			<definition>x_Pests=(Or(x_p_=0,x_n_=0) ? 0 : x_n_&lt;200 ? Binomial(x_n_,x_p_) : And(x_n_*x_p_&gt;=5,x_n_*(1-x_p_)&gt;=5) ? Normal(x_n_*x_p_,Sqrt(x_n_*x_p_*(1-x_p_))) : Binomial(x_n_/Max(Min(Pow10(Log10(x_n_)-2),Pow10(Log10(1/x_p_)-1)),1),x_p_*Max(Min(Pow10(Log10(x_n_)-2),Pow10(Log10(1/x_p_)-1)),1)))+Disperse_Pests_Density</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Establishment___t_1__">
+			<definition>Establishment___t_1__=0</definition>
+			<property id="dynamic">Establishment_</property>
+		</equation>
+		<equation id="Eradication_Detection">
+			<definition lower="0" upper="1">Eradication_Detection=0</definition>
+		</equation>
+		<equation id="Eradication_Control">
+			<definition lower="0" upper="1">Eradication_Control=0</definition>
+		</equation>
+		<equation id="Eradication_Natural">
+			<parents>Habitat_Suitability</parents>
+			<definition>Eradication_Natural=Switch(Habitat_Suitability,0,1,1,0.5,2,0.1,3,0)</definition>
+		</equation>
+		<equation id="Eradication_Efficacy">
+			<parents>Eradication_Detection Eradication_Control Eradication_Natural</parents>
+			<definition lower="0" upper="1">Eradication_Efficacy=1-(1-Eradication_Detection*Eradication_Control)*(1-Eradication_Natural)</definition>
+		</equation>
+		<equation id="Establishment_Rate">
+			<parents>Habitat_Suitability</parents>
+			<definition lower="0" upper="1">Establishment_Rate=Switch(Habitat_Suitability,0,0,1,0.001,2,0.005,3,0.01)</definition>
+		</equation>
+		<equation id="x_Establishment_">
+			<parents>Establishment_Rate Establishment___t_1__ Eradication_Efficacy x_Pests</parents>
+			<definition>x_Establishment_=1-(1-Establishment___t_1__*(1-Eradication_Efficacy))*(1-(1-(1-Establishment_Rate)^x_Pests))</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Spread_Rate">
+			<parents>Habitat_Suitability</parents>
+			<definition lower="0" upper="1">Spread_Rate=Switch(Habitat_Suitability,0,0,1,0.25,2,0.5,3,0.9)</definition>
+		</equation>
+		<equation id="x_Spread_">
+			<parents>x_Establishment_ Spread_Rate</parents>
+			<definition>x_Spread_=x_Establishment_*Spread_Rate</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Economic_Est_Cost">
+			<parents>LU</parents>
+			<definition lower="0" upper="1000000">Economic_Est_Cost=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="Economic_Spread_Cost">
+			<parents>LU</parents>
+			<definition lower="0" upper="1000000">Economic_Spread_Cost=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="Economic_Consequences">
+			<parents>Economic_Est_Cost x_Establishment_ Economic_Spread_Cost x_Spread_</parents>
+			<definition lower="0" upper="10000000">Economic_Consequences=Economic_Est_Cost*x_Establishment_+Economic_Spread_Cost*x_Spread_</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Environmental_Est_Cost">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">Environmental_Est_Cost=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="Environmental_Spread_Cost">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">Environmental_Spread_Cost=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="Environmental_Consequences">
+			<parents>Environmental_Est_Cost x_Establishment_ Environmental_Spread_Cost x_Spread_</parents>
+			<definition lower="0" upper="1000">Environmental_Consequences=Environmental_Est_Cost*x_Establishment_+Environmental_Spread_Cost*x_Spread_</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Human_Health_Est_Cost">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">Human_Health_Est_Cost=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="Human_Health_Spread_Cost">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">Human_Health_Spread_Cost=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="Human_Health_Consequences">
+			<parents>Human_Health_Est_Cost x_Establishment_ Human_Health_Spread_Cost x_Spread_</parents>
+			<definition lower="0" upper="1000">Human_Health_Consequences=Human_Health_Est_Cost*x_Establishment_+Human_Health_Spread_Cost*x_Spread_</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Social_cultural_Est_Cost">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">Social_cultural_Est_Cost=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="Social_cultural_Spread_Cost">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">Social_cultural_Spread_Cost=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="Social_cultural_Consequences">
+			<parents>Social_cultural_Est_Cost x_Establishment_ Social_cultural_Spread_Cost x_Spread_</parents>
+			<definition lower="0" upper="1000">Social_cultural_Consequences=Social_cultural_Est_Cost*x_Establishment_+Social_cultural_Spread_Cost*x_Spread_</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Exposure_Pests_Count">
+			<definition>Exposure_Pests_Count=Uniform(0,100)</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="Exposure_Pests_Density">
+			<parents>Area Exposure_Pests_Count</parents>
+			<definition>Exposure_Pests_Density=If(Area&lt;0.1,0,Exposure_Pests_Count/Area)</definition>
+			<property id="output">true</property>
+		</equation>
+	</nodes>
+	<extensions>
+		<genie version="1.0" app="GeNIe 2.5.5408.0 ACADEMIC" name="Network1">
+			<node id="Pests__t_1__">
+				<name>Pests (t-1)</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>12 194 100 249</position>
+			</node>
+			<node id="x_Pests">
+				<name>_Pests</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>510 195 598 250</position>
+			</node>
+			<node id="Dieoff">
+				<name>Dieoff</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>289 109 377 164</position>
+			</node>
+			<node id="Establishment___t_1__">
+				<name>Establishment? (t-1)</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>19 591 116 651</position>
+			</node>
+			<node id="x_Establishment_">
+				<name>_Establishment?</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>510 596 599 651</position>
+			</node>
+			<node id="x_Spread_">
+				<name>_Spread?</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>510 845 599 900</position>
+			</node>
+			<node id="Spread_Rate">
+				<name>Spread Rate</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>319 742 420 805</position>
+			</node>
+			<node id="Eradication_Detection">
+				<name>Eradication Detection</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>39 401 134 460</position>
+			</node>
+			<node id="Eradication_Control">
+				<name>Eradication Control</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>144 401 239 460</position>
+			</node>
+			<node id="Eradication_Efficacy">
+				<name>Eradication Efficacy</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>141 514 242 577</position>
+			</node>
+			<node id="Economic_Consequences">
+				<name>Economic Consequences</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>674 502 769 561</position>
+			</node>
+			<node id="Environmental_Consequences">
+				<name>Environmental Consequences</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>674 647 769 706</position>
+			</node>
+			<node id="Human_Health_Consequences">
+				<name>Human Health Consequences</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>674 793 769 852</position>
+			</node>
+			<node id="Economic_Est_Cost">
+				<name>Economic Est Cost</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>840 451 939 512</position>
+			</node>
+			<node id="Economic_Spread_Cost">
+				<name>Economic Spread Cost</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>843 530 935 587</position>
+			</node>
+			<node id="Environmental_Est_Cost">
+				<name>Environmental Est Cost</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>844 608 934 664</position>
+			</node>
+			<node id="Environmental_Spread_Cost">
+				<name>Environmental Spread Cost</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>844 685 934 741</position>
+			</node>
+			<node id="Human_Health_Est_Cost">
+				<name>Human Health Est Cost</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>843 762 936 820</position>
+			</node>
+			<node id="Human_Health_Spread_Cost">
+				<name>Human Health Spread Cost</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>838 837 940 900</position>
+			</node>
+			<node id="Social_cultural_Consequences">
+				<name>Social/cultural Consequences</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>674 939 769 998</position>
+			</node>
+			<node id="Social_cultural_Est_Cost">
+				<name>Social/cultural Est Cost</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>843 917 936 975</position>
+			</node>
+			<node id="Social_cultural_Spread_Cost">
+				<name>Social/cultural Spread Cost</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>838 993 940 1056</position>
+			</node>
+			<node id="x_n_">
+				<name>_n_</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>319 210 359 235</position>
+			</node>
+			<node id="x_p_">
+				<name>_p_</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>420 158 460 183</position>
+			</node>
+			<node id="LS">
+				<name>LS</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1045 119 1093 149</position>
+				<barchart width="128" height="72" />
+			</node>
+			<node id="Habitat_Suitability">
+				<name>Habitat Suitability</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>918 175 1013 234</position>
+			</node>
+			<node id="Eradication_Natural">
+				<name>Eradication Natural</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>249 401 344 460</position>
+			</node>
+			<node id="EI">
+				<name>EI</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>907 22 955 52</position>
+			</node>
+			<node id="CS">
+				<name>CS</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>941 119 989 149</position>
+			</node>
+			<node id="GI">
+				<name>GI</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>974 22 1022 52</position>
+			</node>
+			<node id="Disperse_Pests_Density">
+				<name>Disperse Pests</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>510 100 598 155</position>
+			</node>
+			<node id="Exposure_Pests_Density">
+				<name>Exposure Pests</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>697 101 785 156</position>
+			</node>
+			<node id="Area">
+				<name>Area</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>602 19 690 74</position>
+			</node>
+			<node id="Disperse_Pests_Count">
+				<name>Disperse Pests</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>510 19 598 74</position>
+			</node>
+			<node id="Exposure_Pests_Count">
+				<name>Exposure Pests</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>697 19 785 74</position>
+			</node>
+			<node id="GS">
+				<name>GS</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>828 23 876 53</position>
+			</node>
+			<node id="CI">
+				<name>CI</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>941 71 989 101</position>
+			</node>
+			<node id="LU">
+				<name>LU</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1123 119 1171 149</position>
+			</node>
+			<node id="Establishment_Rate">
+				<name>Establishment Rate</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>319 514 420 577</position>
+			</node>
+		</genie>
+	</extensions>
+</smile>

@@ -1,0 +1,170 @@
+
+* { box-sizing: border-box; min-height: 0; min-width: 0; }
+a, a:visited { color: blue; text-decoration: none; }
+a:hover { color: #6666dd;  text-decoration: underline; }
+html, body { font-family: arial; margin: 0; padding: 0; width: 100%; height: 100%; font-size: 11pt;
+	overflow: auto; /*Prevents margin collapsing*/ }
+th { text-align: left; }
+th, td { vertical-align: top; }
+table th.hidden, table td.hidden { display: none; }
+
+h1 { padding-left: 18px; }
+h2 { margin-bottom: 0.5em; font-size: 20px; }
+h3 { margin-bottom: 0.2em; }
+h2:first-child { margin-top: 0; }
+h3:first-child { margin-top: 0; }
+
+ul { margin: 4px 0; }
+
+.hide {display: none}
+
+.content { padding: 10px 20px 20px 30px; }
+
+input, [contenteditable] { background: lightyellow; }
+
+.main { display: flex; flex-direction: column; align-self: stretch; width: 100%; height: 100%; }
+.main .appToolbar { padding: 8px 20px 0 0px; margin-left: -7px; }
+.main > .content { flex: 1; min-height: 0; max-height: 100%; display: flex; flex-direction: column; }
+
+.trail li { display: inline-block; }
+.trail li::after { content: ">"; margin: 0 10px; }
+.trail li:last-child::after { display: none; }
+.trail a { display: inline-block; }
+.trail a::after { content: ">"; display: inline-block; color: black; margin-left: 0.5em; }
+.trail a:last-child { color: black; }
+.trail a:last-child::after { display: none; }
+
+.panel { border: solid 1px #ccc; box-shadow: 1px 1px 2px #ddd6; padding: 5px 10px; }
+
+form.grid { display: grid; grid-template-columns: minmax(10em,max-content) max-content; grid-gap: 5px 5px; }
+form.grid .field { display: contents; }
+
+.mainPage { display: grid; grid-template-columns: 1fr; grid-gap: 1em; flex: 1; }
+.mainPage > * { border: solid 1px #ccc; box-shadow: 1px 1px 2px #ddd6; padding: 5px 10px; }
+.mainPage > .projects { padding-right: 0; }
+
+.scenariosPage { display: grid; grid-template-columns: 2fr 1fr; grid-gap: 1em; flex: 1; }
+
+.controls { margin-bottom: 1em; }
+.controls button { font-size: 1.1em; margin-left: 0.3em; }
+.controls button:first-of-type { margin-left: 0; }
+.projects + .controls, .scenarios + .controls { margin-top: 1em; }
+.projects > div, .scenarios > div, .controls { margin: 4px 0; font-size: 1.1em; }
+
+.projects { display: grid; grid-template-rows: auto 1fr auto;  }
+
+.projectsList {display: grid;grid-template-columns: max-content auto;grid-gap: 5px;align-self: start;overflow: auto;max-height: 100%;}
+.projectsList .project { display: contents; }
+.projects .runStatus { margin-left: 1em; font-size: 90%; vertical-align: middle; color: #777; }
+
+.runStatus th { text-align: left; }
+.runStatus td, .runStatus th { padding-right: 1em; max-width: 300px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+
+.scenariosPanel { border: solid 1px #ccc; padding: 10px; flex: 1; display: flex; flex-direction: column; }
+.scenariosPanel .scenarios { flex: 1; }
+.scenarioList { display: grid; grid-template-columns: minmax(15em, max-content) max-content max-content; grid-gap: 5px; }
+.scenario { display: contents; }
+.scenario .name { padding-right: 1em; }
+.scenario.isBase .name::after { content: " (Base)"; color: #777; }
+.scenario .status { color: #777; }
+
+.config { border: solid 1px #ccc; padding: 10px; flex: 1; display: flex; flex-direction: column; }
+.config .settingsPanel { flex: 1; }
+
+
+/* combine these */
+.spreadsheet { border-collapse: collapse; margin: 5px; flex: 1; }
+.spreadsheet tr:first-child td { background: #eee; }
+.spreadsheet td { border: solid 1px #ccc; padding: 3px; }
+.spreadsheet *[data-diff] { background: #99f; }
+.spreadsheet .error { background: rgb(255,128,128); }
+
+.dataTable { border-collapse: collapse; border: solid 1px #ccc; }
+.dataTable th, .dataTable td { border: solid 1px #ccc; padding: 2px; }
+/** Note that top needs to be set to the negative of whatever parent padding is, which is an incredible PITA **/
+.dataTable th { background: #eee; position: sticky; top: -1px; background-clip: padding-box; z-index: 10; }
+
+.outputPanels { display: grid; grid-template-columns: 230px 1fr; border: solid 1px #ccc; flex: 1; }
+.outputPanels .sideBar { padding: 5px; border-right: solid 1px #ccc;}
+
+.main .graph { display: grid; grid-template-rows: auto auto 1fr; height: 100%; }
+.graphControls { margin-bottom: 8px; }
+.graph .location { padding: 5px; }
+.graph .location input { font-size: inherit; border: solid 1px transparent; width: 30em; }
+.graph .location input:hover, .graph .location input:focus { border: solid 1px black; }
+
+.main.scrollable { overflow:auto; }
+
+ul.displayValues { list-style-type: none; margin-left: 0; padding-left: 0; }
+ul.displayValues li { margin-left: 0; padding-left: 0; }
+ul.displayValues ul { list-style-type: none; margin-left: 1.3em; padding-left: 0; }
+ul.nestedSelections input[type=checkbox].mixed { opacity: 0.5; }
+
+.dateSlider { width: 500px; font-size: 8pt; --months: 12; }
+.dateSlider [type="range"] { width: calc(100% - 1/var(--months)*100%*0.5); margin: 0 calc(1/var(--months)*100%/2*0.5); }
+.dateSlider datalist { display: block; margin-top: -2px; }
+.dateSlider datalist option { display: inline-block; width: calc(1/var(--months)*100%); overflow: hidden;
+	text-align: center; }
+.dateSlider .selected { font-weight: bold; background: rgb(0,128,255); color: white; border-radius: 3px; }
+
+.mapPanel { width: 100%; height: 100%; overflow: auto; padding: 0px; }
+.resultsPanel { width: 100%; height: 100%; overflow: hidden; position: relative; }
+.mapControls { position: absolute; z-index: 20; vertical-align: middle; }
+.mapViewParent { width: 100%; height: 100%; overflow: hidden; }
+.mapControls.bottom { bottom: 0; }
+.mapView { transform-origin: 0 0; cursor: grab; position: relative; }
+
+/** If changing these parameters, also change colorPolys in _server.py **/
+.scale { background: linear-gradient(hsl(0,100%,50%), hsl(40,100%,50%) 45%, hsl(40,100%,100%)); height: 200px;
+	width: 10px; border: solid 1px #ccc; position: relative; position: absolute;
+	top: 35px; left: 15px; }
+.diffScale { background: linear-gradient(rgb(255,0,0), rgb(255,250,250) 50%, rgb(0,0,255)); height: 200px;
+	width: 10px; border: solid 1px #ccc; position: relative; position: absolute;
+	top: 35px; left: 15px; }
+	
+.scaleMark { font-size: 8pt; position: absolute;
+	left: calc(100% + 0.3em); }
+.scaleLabel { font-size: 8pt; position: absolute; top: calc(100% + 1em);
+	left: -1.3em; }
+
+/** Dialogs **/
+.dialog { background: rgb(255,255,255); background: rgba(255,255,255,0.95);
+	border: solid 1px black; box-shadow: 2px 2px 2px #888; padding: 1.2em; min-width: 150px;
+	max-width: 80vw; }
+.dialog.page { width: 80%; height: 70%; }
+.dialog h2 { margin: 0; margin-bottom: 8px; }
+.dialog .controls { margin-top: 8px; text-align: right; display: block; }
+.veil { position: fixed; z-index: 1000; background: rgba(255,255,255,0.7); opacity: 0; top: 0; left: 0;
+	display: flex; width: 100vw; height: 100vh; justify-content: center; align-items: center;
+	transition: opacity 0.3s; }
+	
+.hide {display: none}
+
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+ 
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 21;
+  
+  top: -100%;
+  left: 105%;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}

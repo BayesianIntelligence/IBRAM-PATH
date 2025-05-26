@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<smile version="1.0" id="Network1" numsamples="1000" discsamples="10000">
+	<nodes>
+		<equation id="PPQ_p">
+			<definition>PPQ_p=0.5</definition>
+		</equation>
+		<equation id="PPQ_n">
+			<definition>PPQ_n=1</definition>
+		</equation>
+		<equation id="PreviousPestQuantity">
+			<parents>PPQ_n PPQ_p</parents>
+			<definition>PreviousPestQuantity=PPQ_n*PPQ_p</definition>
+		</equation>
+		<equation id="ProportionToHere">
+			<definition>ProportionToHere=0.4</definition>
+		</equation>
+		<equation id="PestQuantityArrives">
+			<parents>PreviousPestQuantity ProportionToHere</parents>
+			<definition lower="0" upper="100000000">PestQuantityArrives=PreviousPestQuantity*ProportionToHere</definition>
+		</equation>
+		<equation id="DetectionRate">
+			<definition lower="0" upper="1">DetectionRate=0.8</definition>
+		</equation>
+		<equation id="TreatmentRateForUndetected">
+			<definition>TreatmentRateForUndetected=0.2</definition>
+		</equation>
+		<equation id="TreatmentRate">
+			<parents>DetectionRate TreatmentRateForUndetected</parents>
+			<definition lower="0" upper="1">TreatmentRate=DetectionRate+(1-DetectionRate)*TreatmentRateForUndetected</definition>
+		</equation>
+		<equation id="TreatmentEfficacy">
+			<definition lower="0" upper="1">TreatmentEfficacy=0.95</definition>
+		</equation>
+		<equation id="ProportionTreated">
+			<parents>TreatmentRate TreatmentEfficacy</parents>
+			<definition lower="0" upper="1">ProportionTreated=TreatmentRate*TreatmentEfficacy</definition>
+		</equation>
+		<equation id="PestQuantity">
+			<parents>PestQuantityArrives ProportionTreated</parents>
+			<definition lower="0" upper="10000000">PestQuantity=PestQuantityArrives*(1-ProportionTreated)</definition>
+		</equation>
+		<equation id="ProportionThatEscapeAtSite">
+			<definition>ProportionThatEscapeAtSite=0.09</definition>
+		</equation>
+		<equation id="Exposures">
+			<parents>PestQuantity ProportionThatEscapeAtSite</parents>
+			<definition lower="0" upper="10000000">Exposures=PestQuantity*ProportionThatEscapeAtSite</definition>
+		</equation>
+		<equation id="ProportionChange">
+			<definition lower="0" upper="1">ProportionChange=0.98</definition>
+		</equation>
+		<equation id="NextPestQuantity">
+			<parents>PestQuantity Exposures ProportionChange</parents>
+			<definition lower="0" upper="1000000">NextPestQuantity=Trim((PestQuantity-Exposures)*ProportionChange,0,1e+06)</definition>
+		</equation>
+		<equation id="AnyExposure">
+			<parents>Exposures</parents>
+			<definition lower="0" upper="1">AnyExposure=Exposures&gt;0</definition>
+		</equation>
+	</nodes>
+	<extensions>
+		<genie version="1.0" app="GeNIe 4.1.3402.2 1d9f5773304b480" name="Network1">
+			<node id="Exposures">
+				<name>Exposures</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>475 639 541 680</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="ProportionThatEscapeAtSite">
+				<name>ProportionThatEscapeAtSite</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>267 508 427 570</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="PestQuantity">
+				<name>PestQuantity</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>472 401 545 446</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="ProportionToHere">
+				<name>ProportionToHere</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>172 265 267 324</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="PreviousPestQuantity">
+				<name>PreviousPestQuantity</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>-1 397 151 450</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="NextPestQuantity">
+				<name>NextPestQuantity</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>755 400 879 447</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="PestQuantityArrives">
+				<name>PestQuantityArrives</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>258 403 397 444</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="ProportionChange">
+				<name>ProportionChange</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>640 264 737 324</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="AnyExposure">
+				<name>AnyExposure</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>469 739 547 787</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="ProportionTreated">
+				<name>ProportionTreated</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>386 269 461 315</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="TreatmentEfficacy">
+				<name>TreatmentEfficacy</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>452 166 551 227</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="TreatmentRate">
+				<name>TreatmentRate</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>278 176 360 227</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="DetectionRate">
+				<name>DetectionRate</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>176 65 254 113</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="TreatmentRateForUndetected">
+				<name>TreatmentRateForUndetected</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>297 57 472 117</position>
+				<barchart active="true" width="128" height="64" />
+			</node>
+			<node id="PPQ_n">
+				<name>PPQ_n</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>8 302 56 332</position>
+			</node>
+			<node id="PPQ_p">
+				<name>PPQ_p</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>86 301 134 331</position>
+			</node>
+			<textbox>
+				<caption>Note: Because the &apos;n&apos; in each binomial represents an average the output becomes increasingly invalid as n approaches 1 and then 0. In that event, the binomial output is adjusted in favour of the average.</caption>
+				<font color="000000" name="Arial" size="8" />
+				<position>5 530 195 614</position>
+			</textbox>
+			<textbox>
+				<caption>Input variable</caption>
+				<font color="000000" name="Arial" size="8" />
+				<position>183 39 247 53</position>
+			</textbox>
+			<textbox>
+				<caption>Input variable</caption>
+				<font color="000000" name="Arial" size="8" />
+				<position>350 38 414 52</position>
+			</textbox>
+			<textbox>
+				<caption>Input variable</caption>
+				<font color="000000" name="Arial" size="8" />
+				<position>468 149 532 163</position>
+			</textbox>
+		</genie>
+	</extensions>
+</smile>

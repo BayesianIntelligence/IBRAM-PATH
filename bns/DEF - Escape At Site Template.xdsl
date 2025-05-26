@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<smile version="1.0" id="Network1" numsamples="1000" discsamples="10000">
+	<nodes>
+		<equation id="TimeAtSite">
+			<definition>TimeAtSite=Normal(2.5,2)</definition>
+		</equation>
+		<equation id="DailyEscapeRate">
+			<definition>DailyEscapeRate=0.1</definition>
+		</equation>
+		<equation id="EscapesAtSite">
+			<parents>DailyEscapeRate TimeAtSite</parents>
+			<definition lower="0" upper="1">EscapesAtSite=Trim(1-(1-DailyEscapeRate)^TimeAtSite,0,1)</definition>
+		</equation>
+		<equation id="MortalityRate">
+			<definition>MortalityRate=0.4</definition>
+		</equation>
+		<equation id="Survives">
+			<parents>MortalityRate TimeAtSite</parents>
+			<definition lower="0" upper="1">Survives=Trim((1-MortalityRate)^TimeAtSite,0,1)</definition>
+		</equation>
+		<equation id="Month">
+			<definition lower="-1" upper="20">Month=7.1</definition>
+		</equation>
+	</nodes>
+	<extensions>
+		<genie version="1.0" app="GeNIe 4.1.3402.2 1d9f5773304b480" name="Network1">
+			<node id="TimeAtSite">
+				<name>TimeAtSite</name>
+				<interior color="f79646" />
+				<outline color="b85707" width="3" />
+				<font color="ffffff" name="Arial" size="8" />
+				<position>449 288 540 344</position>
+				<barchart width="128" height="108" />
+			</node>
+			<node id="DailyEscapeRate">
+				<name>DailyEscapeRate</name>
+				<interior color="f79646" />
+				<outline color="b85707" />
+				<font color="ffffff" name="Arial" size="8" />
+				<position>193 263 284 319</position>
+				<barchart width="128" height="36" />
+			</node>
+			<node id="EscapesAtSite">
+				<name>EscapesAtSite</name>
+				<interior color="f79646" />
+				<outline color="000000" width="3" />
+				<font color="ffffff" name="Arial" size="8" />
+				<position>313 420 404 476</position>
+				<barchart width="128" height="108" />
+			</node>
+			<node id="MortalityRate">
+				<name>MortalityRate</name>
+				<interior color="f79646" />
+				<outline color="b85707" />
+				<font color="ffffff" name="Arial" size="8" />
+				<position>709 266 800 322</position>
+				<barchart width="128" height="36" />
+			</node>
+			<node id="Survives">
+				<name>Survives</name>
+				<interior color="f79646" />
+				<outline color="000000" width="3" />
+				<font color="ffffff" name="Arial" size="8" />
+				<position>571 425 662 481</position>
+				<barchart width="128" height="108" />
+			</node>
+			<node id="Month">
+				<name>Month</name>
+				<interior color="f79646" />
+				<outline color="b85707" width="3" />
+				<font color="ffffff" name="Arial" size="8" />
+				<position>575 165 666 221</position>
+				<barchart width="128" height="64" />
+			</node>
+		</genie>
+	</extensions>
+</smile>

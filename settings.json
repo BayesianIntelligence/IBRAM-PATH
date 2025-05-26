@@ -1,0 +1,6 @@
+{
+	"port": 9487,
+	"outputsDir": "outputs/",
+	"bnsDir": "bns/",
+	"inputsDir": "inputs/"
+}

@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  server:
+    build: .
+    #name the image
+    image: ibram
+    #name the container
+    container_name: ibram
+    volumes:
+      - ./outputs:/app/outputs
+      - ./inputs:/app/inputs
+      - ./ibram.sqlite:/app/ibram.sqlite
+    ports:
+      - 9487:9487
