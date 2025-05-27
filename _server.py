@@ -998,7 +998,6 @@ class IBRAMServer(RequestUtils):
 					});
 					
 					$('button.saveScenario').on('click', function() {
-						console.log('here')
 						saveScenario(function(data) {
 							if(data=='OK') {
 								window.location.href = '/scenario?id='+scenarioId+'&table='+($('.tabButtons .selected').index()-1);
@@ -1084,7 +1083,8 @@ class IBRAMServer(RequestUtils):
 		styled_df = styled_df.format(
 			lambda x: '0' if x == 0 else f"{x:.5f}" if isinstance(x, float) else x
 		)
-		table = styled_df.hide(axis="index").render()
+		# table = styled_df.hide(axis="index").render()
+		table = styled_df.hide(axis="index").to_html()
 		
 
 		return str(n('div.tableContainer', RawHtml(table)))
@@ -1138,11 +1138,12 @@ class IBRAMServer(RequestUtils):
 
 	@cherrypy.expose
 	def outputMap(self, scenarioId, month = None, stage = None):
-		with serverDb() as db:
-			scenario = db.queryRow('select projectId from scenario where id = ?', [scenarioId])
+		with serverDb() as db:			
+			scenario = db.queryRow('select isBase, projectId from scenario where id = ?', [scenarioId])
+			isBase = scenario['isBase']
 			baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])
 		
-		isBase = True if scenarioId == baseScenarioId else False
+		print(isBase)
 		
 		monthsShort = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')
 		allMonths = [monthsShort[i%len(monthsShort)] for i in range(24)]
@@ -1157,7 +1158,7 @@ class IBRAMServer(RequestUtils):
 		mapControls = n('div.mapControls', [
 			n('button', type='button', onclick='zoomMap({reset: true})', c='Reset View'),
 			n('button', type='button', onclick='toggleBorders()', c='Toggle Borders'),
-			n('button.diffToggle', type='button', onclick='toggleMapDifference(this)', c='Show Difference From Base') if not isBase else None,
+			n('button.diffToggle', type='button', onclick='toggleMapDifference(this)', c='Show Difference From Base') if not isBase else '',
 		])
 		
 		bottomMapControls = n('div.mapControls.bottom', [dateControl])
@@ -1363,15 +1364,17 @@ class IBRAMServer(RequestUtils):
 							
 				$(document).ready(function() {
 					$('[name=displayValue]').on('click', function(event) {
-						if (["Entry"].includes($(this).parent().text())) {
-							window.location.href = '/scenarioOutput?scenarioId='+scenarioId+'&stage=entry&locationCode=null&type=table';
+						console.log($(this)[0].value)
+						console.log(outputType === 'table')
+						
+					if ($(this).val() === 'entry') {
+						window.location.href = changeQsUrl(window.location.href, {stage: $(this).val(), type: 'table'});
+					} else {
+						if(outputType == 'table') {
+							outputType = 'map';
 						}
-						else if (outputType=='table' & !["Entry"].includes($(this).parent().text())) {
-							window.location.href = changeQsUrl(window.location.href, {stage: $(this)[0].value, type: 'map'});
-						}
-						else {
-							updateMap()
-						}
+						window.location.href = changeQsUrl(window.location.href, {stage: $(this).val(),type: outputType});
+					}
 					});
 				});
 				'''),
@@ -1396,10 +1399,10 @@ class IBRAMServer(RequestUtils):
 								n('li', n('div', n('input', type='radio', name='displayValue', value='accumulated', checked=stage=='accumulated' or None), 'Accumulated')),
 								n('li', n('div', n('input', type='radio', name='displayValue', value='establishment', checked=stage=='establishment' or None), 'Establishments')),
 								n('li', n('div', n('input', type='radio', name='displayValue', value='spread', checked=stage=='spread' or None), 'Spread')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesEconomic', checked=stage=='consequences' or None), 'Consequences - Economic')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesEnvironmental', checked=stage=='consequences' or None), 'Consequences - Environment')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesHealth', checked=stage=='consequences' or None), 'Consequences - Health')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesSocial', checked=stage=='consequences' or None), 'Consequences - Social')),
+								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesEconomic', checked=stage=='consequencesEconomic' or None), 'Consequences - Economic')),
+								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesEnvironmental', checked=stage=='consequencesEnvironmental' or None), 'Consequences - Environment')),
+								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesHealth', checked=stage=='consequencesHealth' or None), 'Consequences - Health')),
+								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesSocial', checked=stage=='consequencesSocial' or None), 'Consequences - Social')),
 							),
 						),
 					]),

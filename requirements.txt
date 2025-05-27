@@ -13,3 +13,4 @@ rasterio
 pyproj
 shapely
 Jinja2
+matplotlib

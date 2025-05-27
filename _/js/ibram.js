@@ -61,14 +61,14 @@ function exportOutput(scenarioId) {
 
 async function saveScenario() {
 	let saveTables = [
-				'vector', 'units', 'infestationRate', 'vectorInfectionRate', 'itemInfectionRate',
-				'itemVectorTransmissionRate', 'preBorderVectorDetection', 'preBorderItemDetection',
-				'vectorsPerUnit', 'vectorPathwayDetection', 'itemPathwayDetection', 'vectorDailyEscapeRate',
-				'itemDailyEscapeRate', 'vectorDailyMortalityRate', 'itemDailyMortalityRate',
-				'vectorTransmissionRate', 'mortalityRate', 'establishmentRate', 'spreadRate',
-				'eradicationRate', 'landSuitability', 'consequences', 'eradicationDetection'
-			]
-	
+		'vector', 'units', 'infestationRate', 'vectorInfectionRate', 'itemInfectionRate',
+		'itemVectorTransmissionRate', 'preBorderVectorDetection', 'preBorderItemDetection',
+		'vectorsPerUnit', 'vectorPathwayDetection', 'itemPathwayDetection', 'vectorDailyEscapeRate',
+		'itemDailyEscapeRate', 'vectorDailyMortalityRate', 'itemDailyMortalityRate',
+		'vectorTransmissionRate', 'mortalityRate', 'establishmentRate', 'spreadRate',
+		'eradicationRate', 'landSuitability', 'consequences', 'eradicationDetection'
+	];
+
 	let scenarioTables = {};
 	for (let saveTable of saveTables) {
 		let tbl = tableManager(document.querySelector(`table[data-name=${saveTable}]`));
@@ -78,34 +78,33 @@ async function saveScenario() {
 		}
 	}
 
-	
-	let ok = false;
-	await new Promise(resolve => $.post('/saveScenario', {
-			scenarioTables: JSON.stringify(scenarioTables),
-		}, data => {
-		data = skipError(_=>JSON.parse(data), {});
-		if (data.ok) {
-			ok = true;
-		}
-	}).always(_=> resolve()));
-	
-/*
-	if (ok) {
-		
-		popupDialog('Saved!', {buttons: [$('<button>').text('OK').click(dismissDialogs)] });
-		let paramsSheet = document.querySelector('.pathwayPage *[data-name=parameters].active');
-		if (paramsSheet) {
-			let newParams = await (await fetch(`/pathwayParams`)).text();
-			let activeSheet = paramsSheet.querySelector('.tabSheet.active').dataset.name;
-			paramsSheet.querySelector('.parameters.contentPanel').innerHTML = newParams;
-			setupParameterEditing({activeSheet});
-		}
-	}
-	else {
-		popupDialog('Failed to save', {buttons: [$('<button>').text('OK').click(dismissDialogs)] });
-	}
-*/
+	ui.dialog(`<h2>Save Scenario</h2>
+		<p>Changing inputs will invalidate previous runs, are you sure you want to continue?`, {
+		buttons: [
+			$('<button>').text('Continue').on('click', async function () {
+				try {
+					await $.get("/resetScenario", { scenarioId });
+
+					const response = await $.post('/saveScenario', {
+						scenarioTables: JSON.stringify(scenarioTables)
+					});
+
+					const data = skipError(() => JSON.parse(response), {});
+					if (data.ok) {
+						ui.dismissDialogs();
+					} else {
+						console.error("Save failed", data);
+					}
+				} catch (e) {
+					console.error("Error during saveScenario:", e);
+				}
+			}),
+			$('<button>').text('Cancel').on('click', ui.dismissDialogs)
+		]
+	});
 }
+
+
 
 /// Pathway page parameters
 async function saveParameters() {
@@ -786,19 +785,19 @@ async function updateTimeData() {
 ///project page
 
 function saveSettings(form) {
-		ui.dialog(`<h2>Save Settings</h2>
-			<p>Changing setting will invalidate previous runs, are you sure you want to continue?`, {
-			buttons: [
-				$('<button>').text('Continue').on('click', function() {
-					$.get("/resetProject", {projectId}, function(data) {
-						updateScenarioList()
-						$.post("/saveSettings", $(form).serialize()).always(function(ret) {});
-					});
-					ui.dismissDialogs();
-				}),
-				$('<button>').text('Cancel').on('click', ui.dismissDialogs),
-			],
-		});
+	ui.dialog(`<h2>Save Settings</h2>
+		<p>Changing setting will invalidate previous runs, are you sure you want to continue?`, {
+		buttons: [
+			$('<button>').text('Continue').on('click', function() {
+				$.get("/resetProject", {projectId}, function(data) {
+					updateScenarioList()
+					$.post("/saveSettings", $(form).serialize()).always(function(ret) {});
+				});
+				ui.dismissDialogs();
+			}),
+			$('<button>').text('Cancel').on('click', ui.dismissDialogs),
+		],
+	});
 }
 
 function deleteScenario(scenarioId) {
