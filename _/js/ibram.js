@@ -135,15 +135,14 @@ async function saveParameters() {
 	}).always(_=> resolve()));
 	
 	if (ok) {
-		
-		popupDialog('Saved!', {buttons: [$('<button>').text('OK').click(dismissDialogs)] });
-		let paramsSheet = document.querySelector('.pathwayPage *[data-name=parameters].active');
-		if (paramsSheet) {
-			let newParams = await (await fetch(`/pathwayParams`)).text();
-			let activeSheet = paramsSheet.querySelector('.tabSheet.active').dataset.name;
-			paramsSheet.querySelector('.parameters.contentPanel').innerHTML = newParams;
-			setupParameterEditing({activeSheet});
-		}
+		popupDialog('Saved!', {
+			buttons: [
+				$('<button>').text('OK').click(() => {
+					dismissDialogs();
+					location.reload();
+				})
+			]
+		});
 	}
 	else {
 		popupDialog('Failed to save', {buttons: [$('<button>').text('OK').click(dismissDialogs)] });
@@ -237,6 +236,7 @@ function addClimateMap() {
 			let newRow = refRow.cloneNode(true);
 			refRow.after(newRow);
 			mapTableMgr.setInnerValue(newRow, 'div',
+				'id', null,
 				'name', mapName,
 				'fileName', file.name.replace(/\.[^/.]+$/, ''),
 			);
@@ -250,7 +250,7 @@ function deleteClimateMap() {
 	let mapTableMgr = tableManager($('.tabSheet[data-name=climateMaps] .dataTable')[0]);
 	popupDialog(n('div',
 		'Choose map to delete:', n('ul',
-			mapTableMgr.getColumnValues('name').slice(1).map(v => {
+			mapTableMgr.getColumnValues('name').map(v => {
 				return n('div',n('label',
 					n('input', {type: 'radio', name: 'item', value: v}),
 					v,
@@ -303,29 +303,57 @@ function addItem() {
 		n('button', 'Cancel', {on: {click: dismissDialogs}})
 	]});
 }
+
+
 function deleteItem() {
 	let itemTableMgr = tableManager($('.tabSheet[data-name=items] .dataTable')[0]);
+	let pointTableMgr = tableManager($('.tabSheet[data-name=pathwayPoints] .dataTable')[0]);
+
 	popupDialog(n('div',
-		'Choose item to delete:', n('ul',
+		'Choose item to delete:',
+		n('ul',
 			itemTableMgr.getColumnValues('name').slice(1).map(v => {
-				return n('div',n('label',
-					n('input', {type: 'radio', name: 'item', value: v}),
-					v,
+				return n('div', n('label',
+					n('input', { type: 'radio', name: 'item', value: v }),
+					v
 				))
 			})
-		),
-	), {buttons: [
-		n('button', 'Delete', {on: {click: event => {
-			let dlg = event.target.closest('.dialog');
-			let item = dlg.querySelector('*[name=item]:checked').value;
-			
-			let refRow = itemTableMgr.findRows({name: item})[0];
-			refRow.remove();
-			dismissDialogs();
-		}}}),
-		n('button', 'Cancel', {on: {click: dismissDialogs}})
-	]});
+		)
+	), {
+		buttons: [
+			n('button', 'Delete', {
+				on: {
+					click: event => {
+						let dlg = event.target.closest('.dialog');
+						let itemName = dlg.querySelector('*[name=item]:checked').value;
+
+						let refRow = itemTableMgr.findRows({ name: itemName })[0];
+
+						// Try to find the 'id' column index case-insensitively
+						let headerRow = refRow.closest('table').querySelector('thead tr');
+						let headers = Array.from(headerRow.children).map(th => th.textContent.trim().toLowerCase());
+
+						// console.log("Item table headers:", headers);
+
+						let idIndex = headers.findIndex(h => h === 'id');
+						let itemId = refRow.cells[idIndex].textContent.trim();
+
+						// Remove the item row
+						refRow.remove();
+
+						// Remove all pathwayPoints with matching itemId
+						pointTableMgr.findRows({ itemId }).forEach(row => row.remove());
+
+						dismissDialogs();
+					}
+				}
+			}),
+			n('button', 'Cancel', { on: { click: dismissDialogs } })
+		]
+	});
 }
+
+
 
 
 
@@ -337,15 +365,26 @@ function addPathwayPoint() {
 
 	let updateBeforePoints = (selectedItem) => {
 		beforePointContainer.innerHTML = '';
-		pointTableMgr.findRows({item: selectedItem}).forEach(v => {
-			let val = v.cells[1].textContent;
+		const matchingRows = pointTableMgr.findRows({ item: selectedItem });
+
+		if (matchingRows.length === 0) {
 			beforePointContainer.appendChild(
 				n('div', n('label',
-					n('input', {type: 'radio', name: 'beforePoint', value: val}),
-					val
+					n('input', { type: 'radio', name: 'beforePoint', value: 'entry' }),
+					'Entry point'
 				))
 			);
-		});
+		} else {
+			matchingRows.forEach(v => {
+				let val = v.cells[1].textContent;
+				beforePointContainer.appendChild(
+					n('div', n('label',
+						n('input', { type: 'radio', name: 'beforePoint', value: val }),
+						val
+					))
+				);
+			});
+		}
 	};
 
 	let itemList = n('ul',
@@ -381,14 +420,16 @@ function addPathwayPoint() {
 				on: {
 					click: event => {
 						let dlg = event.target.closest('.dialog');
-						let beforePoint = (dlg.querySelector('*[name=beforePoint]:checked') || {}).value;
 						let pointName = (dlg.querySelector('*[name=name]') || {}).value;
+						let item = (dlg.querySelector('*[name=item]:checked') || {}).value;
+						let beforePoint = (dlg.querySelector('*[name=beforePoint]:checked') || {}).value;
 						let fileInput = dlg.querySelector('*[name=filePicker]');
 						let geometryType = (dlg.querySelector('*[name=geometryType]:checked') || {}).value;
 						let file = fileInput?.files[0];
 
 						let errors = [];
 						if (!pointName) errors.push('Please specify "Name".');
+						if (!item) errors.push('Please specify an item.');
 						if (!beforePoint) errors.push('Please specify "Add this point after".');
 						if (!geometryType) errors.push('Please specify a geometry type.');
 						if (!file) errors.push('Please specify a file.');
@@ -414,18 +455,28 @@ function addPathwayPoint() {
 							return;
 						}
 						
-						let refRow = pointTableMgr.findRows({name: beforePoint})[0];
-						let newRow = refRow.cloneNode(true);
+						let refRow = beforePoint === 'start'
+							? null
+							: pointTableMgr.findRows({ name: beforePoint })[0];
+
+						let newRow = (refRow || pointTableMgr.table.tBodies[0].rows[0]).cloneNode(true);
 						newRow.classList.add('new');
-						refRow.after(newRow);
-						
-						
+
+						// Insert after refRow, or at end if refRow is null
+						if (refRow) {
+							refRow.after(newRow);
+						} else {
+							pointTableMgr.table.tBodies[0].appendChild(newRow);
+						}
+
 						pointTableMgr.setInnerValue(newRow, 'div',
 							'name', pointName,
+							'item', item,
 							'tableName', file.name.replace(/\.[^/.]+$/, ''),
 							'shape', geometryType,
 							'timeAtSite', 'Normal(2,1)',
 						);
+
 						dismissDialogs();
 					}
 				}
@@ -438,26 +489,37 @@ function addPathwayPoint() {
 
 function deletePathwayPoint() {
 	let pointTableMgr = tableManager($('.tabSheet[data-name=pathwayPoints] .dataTable')[0]);
+	let rows = pointTableMgr.getTableValues().data;
+
 	popupDialog(n('div',
-		'Choose point to delete:', n('ul',
-			pointTableMgr.getColumnValues('name').slice(1).map(v => {
-				return n('div',n('label',
-					n('input', {type: 'radio', name: 'point', value: v}),
-					v,
-				))
+		'Choose point to delete:',
+		n('ul',
+			rows.map(row => {
+				const [id, name, item] = row;
+				let label = `${item}: ${name}`;
+				return n('div', n('label',
+					n('input', {type: 'radio', name: 'point', value: id}),
+					label
+				));
 			})
-		),
-	), {buttons: [
-		n('button', 'Delete', {on: {click: event => {
-			let dlg = event.target.closest('.dialog');
-			let point = dlg.querySelector('*[name=point]:checked').value;
-			
-			let refRow = pointTableMgr.findRows({name: point})[0];
-			refRow.remove();
-			dismissDialogs();
-		}}}),
-		n('button', 'Cancel', {on: {click: dismissDialogs}})
-	]});
+		)
+	), {
+		buttons: [
+			n('button', 'Delete', {
+				on: {
+					click: event => {
+						let dlg = event.target.closest('.dialog');
+						let point = dlg.querySelector('*[name=point]:checked').value;
+
+						let refRow = pointTableMgr.findRows({id: point})[0];
+						refRow.remove();
+						dismissDialogs();
+					}
+				}
+			}),
+			n('button', 'Cancel', {on: {click: dismissDialogs}})
+		]
+	});
 }
 
 
@@ -764,6 +826,12 @@ function deleteScenario(scenarioId) {
 
 function runScenario(scenarioId) {
 	$.post('/runScenario', {scenarioId}, function(data) {
+		window.location.href = '/project?id='+projectId
+	});
+}
+
+function runProject() {
+	$.post('/runProject', {projectId}, function(data) {
 		window.location.href = '/project?id='+projectId
 	});
 }

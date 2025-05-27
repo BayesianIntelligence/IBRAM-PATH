@@ -4,7 +4,6 @@ import utils
 from bidb import DB
 from htm import node as n, toHtml, RawHtml
 
-from make_pest_input import *
 from openpyxl import load_workbook
 from io import BytesIO
 
@@ -43,7 +42,7 @@ class IBRAMServer(RequestUtils):
 			climateMaps = db.queryRows('SELECT * FROM climateMap')
 
 		sortedMaps = sorted(climateMaps, key=lambda m: m['name'])
-		maps = [['','','']]+[[m['name'], m['fileName']] for m in sortedMaps]
+		maps = [['','','']]+[[m['fileName'], m['name']] for m in sortedMaps]
 		
 		return maps
 
@@ -109,44 +108,64 @@ class IBRAMServer(RequestUtils):
 		
 		return json.dumps({'ok': True})
 
+	
 	@cherrypy.expose
 	def saveParameters(self, paramTables):
 		paramTables = json.loads(paramTables)
-		
-		
+
 		with serverDb() as db:
 			class _Save:
-				def climateMaps(_self, tableValues):
-					db.query('delete from climateMap')
-					tableValues = json.loads(json.dumps(tableValues))
-					idPos = tableValues['fields'].index('id')
-					for v in tableValues['data']:
-						v[idPos] = None
-					self.saveTable('climateMap', tableValues)
-				def items(_self, tableValues):
-					db.query('delete from item')
-					tableValues = json.loads(json.dumps(tableValues))
-					idPos = tableValues['fields'].index('id')
-					for v in tableValues['data']:
-						v[idPos] = None
-					self.saveTable('item', tableValues)
-				def pathwayPoints(_self, tableValues):
-					point = json.loads(json.dumps(tableValues))
-					idPos = point['fields'].index('id')
-					itemIdPos = point['fields'].index('itemId')
-					db.query('delete from pathwayPoint where itemId in '+db.intParams([p[itemIdPos] for p in point['data']]))
-					for p in point['data']:
-						p[idPos] = None
-					newPks = self.saveTable('pathwayPoint', point)
-					db.query('update pathwayPoint set item = (select item from item where item.id = itemId)')
-					
-			save = _Save()			
 
-			for name,table in paramTables.items():
-				method = getattr(save, name)
-				method(table)
-		
+				def climateMaps(_self, tableValues):
+					fields = tableValues['fields']
+					data_rows = [dict(zip(fields, row)) for row in tableValues['data']]
+
+					# Clear the entire table first
+					db.query("DELETE FROM climateMap")
+
+					# Insert all provided rows (without id)
+					for row in data_rows:
+						db.query("INSERT INTO climateMap (name, fileName) VALUES (?, ?)", (row['name'], row['fileName']))
+						
+
+				def items(_self, tableValues):
+					
+					fields = tableValues['fields']
+					data_rows = [dict(zip(fields, row)) for row in tableValues['data']]
+
+					# Clear the entire table first
+					db.query("DELETE FROM item")
+
+					# Insert all provided rows (without id)
+					for row in data_rows:
+						db.query("INSERT INTO item (name) VALUES (?)", [row['name']])
+					
+
+				def pathwayPoints(_self, tableValues):
+					fields = tableValues['fields']
+					data_rows = [dict(zip(fields, row)) for row in tableValues['data']]
+					
+					item_rows = db.query("SELECT id, name FROM item")
+					item_lookup = {row['name']: row['id'] for row in item_rows}
+
+					# Clear the entire table first
+					db.query("DELETE FROM pathwayPoint")
+
+					# Insert all provided rows (without id)
+					for row in data_rows:
+						db.query(
+							"INSERT INTO pathwayPoint (name, item, itemId, tableName, shape, timeAtSite) VALUES (?, ?, ?, ?, ?, ?)",
+							[row['name'], row['item'], item_lookup.get(row['item']), row['tableName'], row['shape'], row['timeAtSite']]
+						)
+
+			save = _Save()
+
+			for name, table in paramTables.items():
+				print(name)
+				getattr(save, name)(table)
+
 			return json.dumps({'ok': True})
+
 		
 	@cherrypy.expose
 	def downloadParameterData(self, file):
@@ -625,8 +644,18 @@ class IBRAMServer(RequestUtils):
 		print('running scenario',scenarioId)
 		with serverDb() as db:
 			self.killScenario(scenarioId)
-			process = subprocess.Popen(['python', '-u', 'run_model.py', '--id', scenarioId])
+			process = subprocess.Popen(['python', '-u', 'run_model.py', '--id', str(scenarioId)])
 			db.replace('scenario', {'complete': None, 'id': scenarioId, 'processId': process.pid, 'status': 'Running'}, 'id')
+
+
+	@cherrypy.expose
+	def runProject(self, projectId):
+		print('running project',projectId)
+		with serverDb() as db:
+			scenarios = db.query('''select scenario.id from scenario where projectId = ? and complete is null''', [projectId])
+			for scenario in scenarios:
+				self.runScenario(scenario['id'])
+	
 
 
 	@cherrypy.expose
@@ -649,17 +678,6 @@ class IBRAMServer(RequestUtils):
 			self.killScenario(scenarioId)
 			db.replace('scenario', {'complete': None, 'id': scenarioId}, 'id')
 
-
-	@cherrypy.expose
-	def runProject(self, projectId):
-		print('running scenario',projectId)
-		with serverDb() as db:
-			
-			scenarios = db.query('''select scenario.id from scenario where projectId = ? and complete is null''', [projectId])
-			
-			# self.killScenario(scenarioId)
-			# process = subprocess.Popen(['python', '-u', 'run_model.py', '--id', scenarioId])
-			# db.replace('scenario', {'complete': None, 'id': scenarioId, 'processId': process.pid, 'status': 'Running'}, 'id')
 
 
 			
@@ -694,8 +712,8 @@ class IBRAMServer(RequestUtils):
 					});
 	 
 					$('button.addProject').on('click', function() {
-						ui.dialog(`<h2>Add Pest</h2>
-							<p>Would you like to create a new pest project or upload an existing spreadsheet?`, {
+						ui.dialog(`<h2>Add Project</h2>
+							<p>Would you like to create a new project or upload an existing spreadsheet?`, {
 							buttons: [
 								$('<button>').text('Generate').on('click', function() {
 									//window.location.href='/generateInput'
@@ -793,6 +811,8 @@ class IBRAMServer(RequestUtils):
 			scenarioList = self.scenarioList(id)
 			maps = self.getClimateMaps()
 			
+			# print(maps)
+			
 			head = [
 				n('script', '''
 	  
@@ -816,7 +836,7 @@ class IBRAMServer(RequestUtils):
 						n('div.controls', [
 							n('button.addScenario', type='button', onclick='addScenario()', c='Add Scenario'),
 							n('input.addScenarioFile', type='file', style='display:none'),
-							n('button.projectUpdate', type='button', onclick='projectUpdat()', c='Update All'),
+							n('button.projectUpdate', type='button', onclick='runProject()', c='Update All'),
 						]),
 					),
 					n('div.config.panel', 
@@ -1003,7 +1023,7 @@ class IBRAMServer(RequestUtils):
 			]
 			
 			return runFileTemplate('basic.html', head = head, body = body, trail = [
-				n('li',n('a', href='/project?id={}'.format(scenario['projectId']), c=[n('i', Class="fas fa-fw fa-bug"), 'Pest'])),
+				n('li',n('a', href='/project?id={}'.format(scenario['projectId']), c=[n('i', Class="fas fa-fw fa-bug"), 'Project'])),
 				n('li', n('i', Class="fas fa-fw fa-edit"), 'Scenario'),
 			])
 		
@@ -1371,9 +1391,9 @@ class IBRAMServer(RequestUtils):
 								n('li', n('div', n('input', type='radio', name='displayValue', value='cs', checked=stage=='cs' or None), 'Climate Suitability')),
 								n('li', n('div', n('input', type='radio', name='displayValue', value='ls', checked=stage=='ls' or None), 'Land Suitability')),
 								n('li', n('div', n('input', type='radio', name='displayValue', value='habitat', checked=stage=='habitat' or None), 'Habitat Suitability')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='exposure', checked=stage=='exposure' or None), 'Exposure Pests')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='disperse', checked=stage=='disperse' or None), 'Disperse Pests')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='accumulated', checked=stage=='accumulated' or None), 'Accumulated Pests')),
+								n('li', n('div', n('input', type='radio', name='displayValue', value='exposure', checked=stage=='exposure' or None), 'Exposure')),
+								n('li', n('div', n('input', type='radio', name='displayValue', value='disperse', checked=stage=='disperse' or None), 'Disperse')),
+								n('li', n('div', n('input', type='radio', name='displayValue', value='accumulated', checked=stage=='accumulated' or None), 'Accumulated')),
 								n('li', n('div', n('input', type='radio', name='displayValue', value='establishment', checked=stage=='establishment' or None), 'Establishments')),
 								n('li', n('div', n('input', type='radio', name='displayValue', value='spread', checked=stage=='spread' or None), 'Spread')),
 								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesEconomic', checked=stage=='consequences' or None), 'Consequences - Economic')),
@@ -1388,7 +1408,7 @@ class IBRAMServer(RequestUtils):
 			]
 			
 			return runFileTemplate('basic.html', head = head, body = body, trail = [
-				n('li',n('a', href='/project?id={}'.format(scenario['projectId']), c=[n('i', Class="fas fa-fw fa-bug"), 'Pest'])),
+				n('li',n('a', href='/project?id={}'.format(scenario['projectId']), c=[n('i', Class="fas fa-fw fa-bug"), 'Project'])),
 				n('li', n('i', Class="fas fa-fw fa-chart-bar"), 'Output'),
 			])
 			
@@ -1434,7 +1454,11 @@ if __name__=="__main__":
 	cherrypy.config.update({
 		'engine.autoreload.on': True,
 		'server.socket_host': '0.0.0.0',
-		'server.socket_port': settings['port'],
+		'server.socket_port': settings['port']
+		# 'log.screen': True,
+		# 'log.access_file': '',
+		# 'log.error_file': '',
+		# 'server.daemonize': False
 	})
 	
 	print()
