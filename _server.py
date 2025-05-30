@@ -1454,6 +1454,12 @@ def secureheaders():
 cherrypy.tools.secureheaders = cherrypy.Tool('before_finalize', secureheaders, priority=60)
 
 if __name__=="__main__":
+	if not os.path.exists('ibram.sqlite'):
+		print("ibram.sqlite not found. Running db_setup.py...")
+		subprocess.run(['py', './db_setup.py', './test-setup.xlsx'], check=True)
+	else:
+		print("ibram.sqlite already exists. Skipping setup.")	
+
 	cherrypy.config.update({
 		'engine.autoreload.on': True,
 		'server.socket_host': '0.0.0.0',
