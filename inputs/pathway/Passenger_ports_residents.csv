@@ -1,12 +1,12 @@
-id,port,portId,item,itemId,yearlyItemUnits,yearlyItemUnitsSpread,timeAtSite,proportionToHere,id,type,name,note,lat,lon,X,Y
-75,Auckland Airport,16,Returning Residents,6,0,0.1,"Normal(0.02,0.001)",0.721476,16,air,Auckland Airport,,-37.0087,174.794,1759580,5902660
-76,Christchurch Airport,17,Returning Residents,6,0,0.1,"Normal(0.02,0.001)",0.1478,17,air,Christchurch Airport,,-43.4851,172.534,1562350,5185200
-77,Dunedin Airport,18,Returning Residents,6,0,0.1,"Normal(0.02,0.001)",0.00549548,18,air,Dunedin Airport,,-45.927,170.2,1382910,4910260
-78,Hawke's Bay Airport,19,Returning Residents,6,0,0.1,,0,19,air,Hawke's Bay Airport,,-39.4735,176.867,1932630,5623540
-79,Invercargill Airport,20,Returning Residents,6,0,0.1,,0,20,air,Invercargill Airport,,-46.4148,168.319,1240290,4849210
-80,Nelson Airport,21,Returning Residents,6,0,0.1,,0,21,air,Nelson Airport,,-41.295,173.224,1618740,5428470
-81,Palmerston North Airport,22,Returning Residents,6,0,0.1,,0,22,air,Palmerston North Airport,,-40.3224,175.623,1822860,5533160
-82,Queenstown Airport,23,Returning Residents,6,0,0.1,"Normal(0.02,0.001)",0.0570213,23,air,Queenstown Airport,,-45.0201,168.739,1264290,5005980
-83,Rotorua Airport,24,Returning Residents,6,0,0.1,"Normal(0.02,0.001)",0.00190052,24,air,Rotorua Airport,,-38.1089,176.317,1890800,5776900
-84,Wellington Airport,25,Returning Residents,6,0,0.1,"Normal(0.02,0.001)",0.0663064,25,air,Wellington Airport,,-41.3263,174.804,1750990,5423450
-85,Whenuapai Airport,26,Returning Residents,6,0,0.1,,0,26,air,Whenuapai Airport,,-36.7883,174.631,1745480,5927370
+,id_x,port,portId,item,itemId,yearlyItemUnits,yearlyItemUnitsSpread,timeAtSite,proportionToHere,name,id_y,type,note,lat,lon,X,Y
+102,42,Auckland Airport,16,Returning Residents,6,2016544.0,10%,"Normal(0.02,0.001)",0.721476452,Auckland Airport,16,air,,-37.00866071,174.7936914,1759584.749,5902662.972
+106,43,Christchurch Airport,17,Returning Residents,6,413104.0,10%,"Normal(0.02,0.001)",0.147799804,Christchurch Airport,17,air,,-43.48513739,172.5344032,1562349.885,5185203.955
+109,51,Wellington Airport,25,Returning Residents,6,185328.0,10%,"Normal(0.02,0.001)",0.066306407,Wellington Airport,25,air,,-41.32626913,174.8042443,1750992.223,5423452.774
+111,44,Dunedin Airport,18,Returning Residents,6,15360.0,10%,"Normal(0.02,0.001)",0.005495481,Dunedin Airport,18,air,,-45.92695315,170.2000878,1382913.891,4910256.105
+113,45,Hawke's Bay Airport,19,Returning Residents,6,,10%,"Normal(0.02,0.001)",0.0,Hawke's Bay Airport,19,air,,-39.47348788,176.8666761,1932628.129,5623536.555
+115,46,Invercargill Airport,20,Returning Residents,6,,10%,"Normal(0.02,0.001)",0.0,Invercargill Airport,20,air,,-46.41477173,168.319112,1240285.372,4849211.783
+117,47,Nelson Airport,21,Returning Residents,6,,10%,"Normal(0.02,0.001)",0.0,Nelson Airport,21,air,,-41.2950365,173.2238337,1618740.57,5428466.089
+119,48,Palmerston North Airport,22,Returning Residents,6,,10%,"Normal(0.02,0.001)",0.0,Palmerston North Airport,22,air,,-40.32239456,175.6230933,1822862.705,5533156.76
+121,49,Queenstown Airport,23,Returning Residents,6,159376.0,10%,"Normal(0.02,0.001)",0.057021335,Queenstown Airport,23,air,,-45.02010881,168.7390404,1264288.652,5005977.622
+123,50,Rotorua Airport,24,Returning Residents,6,5312.0,10%,"Normal(0.02,0.001)",0.00190052,Rotorua Airport,24,air,,-38.10890345,176.3166468,1890800.622,5776904.093
+125,52,Whenuapai Airport,26,Returning Residents,6,,10%,"Normal(0.02,0.001)",0.0,Whenuapai Airport,26,air,,-36.78828465,174.6305287,1745484.879,5927373.583

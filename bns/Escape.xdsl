@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<smile version="1.0" id="Network1" numsamples="10000" discsamples="10000">
+	<nodes>
+		<equation id="carrierDailyMortalityRate">
+			<definition>carrierDailyMortalityRate=Uniform(0,1)</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="pathogenDailyMortalityRate">
+			<definition>pathogenDailyMortalityRate=Uniform(0,1)</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="carrierDailyExitRate">
+			<definition>carrierDailyExitRate=Uniform(0,1)</definition>
+		</equation>
+		<equation id="timeAtSite">
+			<definition lower="0" upper="10000000">timeAtSite=Uniform(0,1e+07)</definition>
+		</equation>
+		<equation id="dailyMortalityRate">
+			<parents>carrierDailyMortalityRate pathogenDailyMortalityRate</parents>
+			<definition>dailyMortalityRate=1-(1-carrierDailyMortalityRate)*(1-pathogenDailyMortalityRate)</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="exit">
+			<parents>carrierDailyExitRate timeAtSite dailyMortalityRate</parents>
+			<definition>exit=carrierDailyExitRate*(1-((1-dailyMortalityRate)*(1-carrierDailyExitRate))^timeAtSite)/(1-(1-dailyMortalityRate)*(1-carrierDailyExitRate))</definition>
+		</equation>
+		<equation id="survive">
+			<parents>dailyMortalityRate timeAtSite</parents>
+			<definition>survive=(1-dailyMortalityRate)^timeAtSite</definition>
+		</equation>
+	</nodes>
+	<extensions>
+		<genie version="1.0" app="GeNIe 5.0.4830.2 1db5aed84d71a00" name="Network1">
+			<node id="carrierDailyMortalityRate">
+				<name>carrierDailyMortalityRate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>61 257 166 322</position>
+				<barchart active="true" width="175" height="36" />
+			</node>
+			<node id="pathogenDailyMortalityRate">
+				<name>pathogenDailyMortalityRate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>254 257 359 322</position>
+				<barchart active="true" width="175" height="36" />
+			</node>
+			<node id="carrierDailyExitRate">
+				<name>carrierDailyExitRate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>641 257 746 322</position>
+				<barchart active="true" width="175" height="36" />
+			</node>
+			<node id="exit">
+				<name>exit</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>441 491 546 556</position>
+				<barchart active="true" width="175" height="36" />
+			</node>
+			<node id="survive">
+				<name>survive</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>242 491 347 556</position>
+				<barchart active="true" width="175" height="36" />
+			</node>
+			<node id="timeAtSite">
+				<name>timeAtSite</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>447 257 552 322</position>
+				<barchart active="true" width="175" height="36" />
+			</node>
+			<node id="dailyMortalityRate">
+				<name>dailyMortalityRate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>150 355 245 414</position>
+				<barchart active="true" width="175" height="36" />
+			</node>
+		</genie>
+	</extensions>
+</smile>

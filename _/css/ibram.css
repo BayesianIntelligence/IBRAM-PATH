@@ -60,6 +60,12 @@ form.grid .field { display: contents; }
 .runStatus th { text-align: left; }
 .runStatus td, .runStatus th { padding-right: 1em; max-width: 300px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 
+
+.scenarioPage { display: flex; flex-direction: column; height: 100%; }
+
+.scenarioPage .tabSet { display: flex; flex-direction: column; height: 100%; }
+.scenarioPage .tabSheets { flex: 1; overflow: auto; }
+
 .scenariosPanel { border: solid 1px #ccc; padding: 10px; flex: 1; display: flex; flex-direction: column; }
 .scenariosPanel .scenarios { flex: 1; }
 .scenarioList { display: grid; grid-template-columns: minmax(15em, max-content) max-content max-content; grid-gap: 5px; }
@@ -85,7 +91,7 @@ form.grid .field { display: contents; }
 .dataTable th { background: #eee; position: sticky; top: -1px; background-clip: padding-box; z-index: 10; }
 
 .outputPanels { display: grid; grid-template-columns: 230px 1fr; border: solid 1px #ccc; flex: 1; }
-.outputPanels .sideBar { padding: 5px; border-right: solid 1px #ccc;}
+.outputPanels .sideBar { padding: 5px; border-right: solid 1px #ccc; overflow: auto;}
 
 .main .graph { display: grid; grid-template-rows: auto auto 1fr; height: 100%; }
 .graphControls { margin-bottom: 8px; }
@@ -108,7 +114,7 @@ ul.nestedSelections input[type=checkbox].mixed { opacity: 0.5; }
 .dateSlider .selected { font-weight: bold; background: rgb(0,128,255); color: white; border-radius: 3px; }
 
 .mapPanel { width: 100%; height: 100%; overflow: auto; padding: 0px; }
-.resultsPanel { width: 100%; height: 100%; overflow: hidden; position: relative; }
+.resultsPanel { width: 100%; height: 100%; position: relative; }
 .mapControls { position: absolute; z-index: 20; vertical-align: middle; }
 .mapViewParent { width: 100%; height: 100%; overflow: hidden; }
 .mapControls.bottom { bottom: 0; }
@@ -168,3 +174,9 @@ ul.nestedSelections input[type=checkbox].mixed { opacity: 0.5; }
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
+
+
+
+
+
+/* .tabSheets { overflow: auto;} */

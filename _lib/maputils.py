@@ -273,35 +273,41 @@ def convertAreaCsvToShp(csvFn, shpFn, attributes = None, include = None, gran = 
 granIndex = None
 def bufInt(inShpFn, outCsvFn, buffer, gran = 'au',
 		# reweightFields = ['uExposures','uQtyArrv','uQty','uNextQty','pExposure'],
-		reweightFields = ['uExposures'],
+		reweightFields = ['exposures'],
 		includeAll = False, extraFields = []):
 	global granIndex
 	
 
 	if gran == 'hex':
-		granShpFn = os.path.join(settings['inputsDir'],'10kmHexClippedNZTM','10kmHexClippedNZTM.shp')
-		granCsvFn = os.path.join(settings['inputsDir'],'10kmHexClippedNZTM', '10kmHexClippedNZTM.csv')
+		granShpFn = os.path.join(settings['inputsDir'],'maps','7kmHexNZ.shp')
+		granCsvFn = os.path.join(settings['inputsDir'],'maps', '7kmHexNZ.csv')
 		codeField = 'Code'
-		nameField = 'EA_Name'
-		areaField = 'area_sqkm'
-	elif gran == 'au':
-		granShpFn = os.path.join(settings['inputsDir'],'AU2013_GV_Clipped_nomulti.shp')
-		granCsvFn = os.path.join(settings['inputsDir'], 'AU2013_GV_Clipped.csv')
-		codeField = 'AU2013'
-		nameField = 'AU2013_NAM'
-		areaField = 'area_sqkm'
-	elif gran == 'sa2':
-		granShpFn = os.path.join(settings['inputsDir'],'maps/SA2_2016_AUST_GDA94_nomulti.shp')
-		granCsvFn = os.path.join(settings['inputsDir'], 'maps/SA2_2016_AUST.csv')
-		codeField = 'SA2_MAIN16'
-		nameField = 'SA2_NAME16'
-		areaField = 'AREASQKM16'
-	else:
-		granShpFn = os.path.join(settings['inputsDir'],'MB2013_GV_Clipped.shp')
-		granCsvFn = os.path.join(settings['inputsDir'], 'MB2013_GV_Clipped.csv')
-		codeField = 'MB2013'
-		nameField = 'MB2013_NAM'
-		areaField = 'area_sqkm'
+		nameField = 'Name'
+		areaField = 'area'
+	# if gran == 'hex':
+	# 	granShpFn = os.path.join(settings['inputsDir'],'10kmHexClippedNZTM','10kmHexClippedNZTM.shp')
+	# 	granCsvFn = os.path.join(settings['inputsDir'],'10kmHexClippedNZTM', '10kmHexClippedNZTM.csv')
+	# 	codeField = 'Code'
+	# 	nameField = 'EA_Name'
+	# 	areaField = 'area_sqkm'
+	# elif gran == 'au':
+	# 	granShpFn = os.path.join(settings['inputsDir'],'AU2013_GV_Clipped_nomulti.shp')
+	# 	granCsvFn = os.path.join(settings['inputsDir'], 'AU2013_GV_Clipped.csv')
+	# 	codeField = 'AU2013'
+	# 	nameField = 'AU2013_NAM'
+	# 	areaField = 'area_sqkm'
+	# elif gran == 'sa2':
+	# 	granShpFn = os.path.join(settings['inputsDir'],'maps/SA2_2016_AUST_GDA94_nomulti.shp')
+	# 	granCsvFn = os.path.join(settings['inputsDir'], 'maps/SA2_2016_AUST.csv')
+	# 	codeField = 'SA2_MAIN16'
+	# 	nameField = 'SA2_NAME16'
+	# 	areaField = 'AREASQKM16'
+	# else:
+	# 	granShpFn = os.path.join(settings['inputsDir'],'MB2013_GV_Clipped.shp')
+	# 	granCsvFn = os.path.join(settings['inputsDir'], 'MB2013_GV_Clipped.csv')
+	# 	codeField = 'MB2013'
+	# 	nameField = 'MB2013_NAM'
+	# 	areaField = 'area_sqkm'
 
 	granLookup = {}
 	with open(granCsvFn,'r') as csvFile:
@@ -325,7 +331,7 @@ def bufInt(inShpFn, outCsvFn, buffer, gran = 'au',
 				# Reweight the properties and add to outLayerByCode
 				mainProps = feature['properties']
 				if outHeaders is None:
-					outHeaders = ['Code','uPeSqKm','sdPeSqKm',nameField] + reweightFields
+					outHeaders = ['Code',nameField] + reweightFields
 					if includeAll:
 						outHeaders += [k for k in mainProps.keys() if k not in outHeaders]
 					elif extraFields:
@@ -376,14 +382,15 @@ def bufInt(inShpFn, outCsvFn, buffer, gran = 'au',
 							#print 'reweighting', shardProp
 							# Reweight required fields
 							outLayerByCode[shard['code']][k] += float(mainProps[k])*shardProp
-						elif k not in ['Code','uPeSqKm','sdPeSqKm',nameField]:
+						elif k not in ['Code',nameField]:
 							# Otherwise, just assign
 							outLayerByCode[shard['code']][k] = mainProps[k]
 					
+		# print(outLayerByCode)s
+
 		# Add information about the granularity unit
 		for code in outLayerByCode.keys():
-			outLayerByCode[code]['uPeSqKm'] = outLayerByCode[code]['uExposures']/float(granLookup[code][areaField])
-			outLayerByCode[code]['sdPeSqKm'] = '0'
+
 			outLayerByCode[code][nameField] = granLookup[code][nameField]
 		
 		# Finally, write out the CSV
@@ -1042,9 +1049,15 @@ if __name__ == "__main__":
 	
 
 if __name__ == "__main__":
-	shpFn = 'inputs/10kmHexClippedNZTM/nzoutline.shp'
-	svgFn = 'inputs/10kmHexClippedNZTM/nzoutline.svg'
+
+	shpFn = 'inputs/maps/7kmHexNZ.shp'
+	svgFn = 'inputs/maps/7kmHexNZ.svg'
 	convertPolyShpToSvg(shpFn, svgFn, codeField = 'Code', simplify = 500)
+	
+	shpFn = 'inputs/maps/nzoutline_buffered.shp'
+	svgFn = 'inputs/maps/nzoutline.svg'
+	convertPolyShpToSvg(shpFn, svgFn, codeField = 'Code', simplify = 500)
+	
 	
 	# import pandas as pd
 

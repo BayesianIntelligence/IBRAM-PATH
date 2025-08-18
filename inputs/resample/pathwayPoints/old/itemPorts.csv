@@ -1,0 +1,131 @@
+﻿id,port,portId,item,itemId,yearlyItemUnits,yearlyItemUnitsSpread,timeAtSite,proportionToHere
+1,Auckland,1,Used vehicles,1,104610,10%,"Normal(0.5,0.1)",0.728268891
+2,Bluff,2,Used vehicles,1,0,10%,"Normal(0.5,0.1)",0
+3,Dunedin,3,Used vehicles,1,2185,10%,"Normal(0.5,0.1)",0.015211428
+4,Gisborne,4,Used vehicles,1,0,10%,"Normal(0.5,0.1)",0
+5,Lyttelton,5,Used vehicles,1,583,10%,"Normal(0.5,0.1)",0.004058701
+6,Napier,7,Used vehicles,1,5427,10%,"Normal(0.5,0.1)",0.037781429
+7,Nelson,8,Used vehicles,1,4819,10%,"Normal(0.5,0.1)",0.033548684
+8,New Plymouth,9,Used vehicles,1,0,10%,"Normal(0.5,0.1)",0
+9,Opua (Bay of Islands),10,Used vehicles,1,0,10%,"Normal(0.5,0.1)",0
+10,Picton,11,Used vehicles,1,0,10%,"Normal(0.5,0.1)",0
+11,Port Chalmers,12,Used vehicles,1,0,10%,"Normal(0.5,0.1)",0
+12,Tauranga,13,Used vehicles,1,2865,10%,"Normal(0.5,0.1)",0.01994542
+13,Timaru,14,Used vehicles,1,0,10%,"Normal(0.5,0.1)",0
+14,Wellington,15,Used vehicles,1,23153,10%,"Normal(0.5,0.1)",0.161185447
+15,Auckland,1,Sea vessels,3,1300,10%,"Normal(3,0.5)",0.227670753
+16,Bluff,2,Sea vessels,3,210,10%,"Normal(3,0.5)",0.036777583
+17,Dunedin,3,Sea vessels,3,380,10%,"Normal(3,0.5)",0.066549912
+18,Gisborne,4,Sea vessels,3,100,10%,"Normal(3,0.5)",0.017513135
+19,Lyttelton,5,Sea vessels,3,590,10%,"Normal(3,0.5)",0.103327496
+20,Napier,7,Sea vessels,3,470,10%,"Normal(3,0.5)",0.082311734
+21,Nelson,8,Sea vessels,3,280,10%,"Normal(3,0.5)",0.049036778
+22,New Plymouth,9,Sea vessels,3,380,10%,"Normal(3,0.5)",0.066549912
+23,Opua (Bay of Islands),10,Sea vessels,3,0,10%,"Normal(3,0.5)",0
+24,Picton,11,Sea vessels,3,0,10%,"Normal(3,0.5)",0
+25,Port Chalmers,12,Sea vessels,3,0,10%,"Normal(3,0.5)",0
+26,Tauranga,13,Sea vessels,3,1230,10%,"Normal(3,0.5)",0.215411559
+27,Timaru,14,Sea vessels,3,190,10%,"Normal(3,0.5)",0.033274956
+28,Wellington,15,Sea vessels,3,580,10%,"Normal(3,0.5)",0.101576182
+29,Auckland Airport,16,Furniture,5,128.94,10%,0,0.00150508
+30,Auckland,1,Furniture,5,48956.839,10%,"Normal(3,0.5)",0.571459149
+31,Christchurch Airport,17,Furniture,5,7.005,10%,0,8.17674E-05
+32,Lyttelton,5,Furniture,5,12381.944,10%,"Normal(3,0.5)",0.144530883
+33,Dunedin,3,Furniture,5,1099.979,10%,"Normal(3,0.5)",0.01283974
+34,Bluff,2,Furniture,5,114.533,10%,"Normal(3,0.5)",0.001336911
+35,Napier,7,Furniture,5,2655.361,10%,"Normal(3,0.5)",0.030995268
+36,Nelson,8,Furniture,5,287.247,10%,"Normal(3,0.5)",0.003352952
+37,New Plymouth,9,Furniture,5,9.276,10%,"Normal(3,0.5)",0.000108276
+38,Tauranga,13,Furniture,5,13214.176,10%,"Normal(3,0.5)",0.154245289
+39,Timaru,14,Furniture,5,89.166,10%,"Normal(3,0.5)",0.001040809
+40,Wellington Airport,25,Furniture,5,1.095,10%,0,1.27816E-05
+41,Wellington,15,Furniture,5,6724.323,10%,"Normal(3,0.5)",0.078491095
+42,Auckland Airport,16,Returning Residents,6,2016544,10%,"Normal(0.02,0.001)",0.721476452
+43,Christchurch Airport,17,Returning Residents,6,413104,10%,"Normal(0.02,0.001)",0.147799804
+44,Dunedin Airport,18,Returning Residents,6,15360,10%,"Normal(0.02,0.001)",0.005495481
+45,Hawke's Bay Airport,19,Returning Residents,6,,10%,"Normal(0.02,0.001)",0
+46,Invercargill Airport,20,Returning Residents,6,,10%,"Normal(0.02,0.001)",0
+47,Nelson Airport,21,Returning Residents,6,,10%,"Normal(0.02,0.001)",0
+48,Palmerston North Airport,22,Returning Residents,6,,10%,"Normal(0.02,0.001)",0
+49,Queenstown Airport,23,Returning Residents,6,159376,10%,"Normal(0.02,0.001)",0.057021335
+50,Rotorua Airport,24,Returning Residents,6,5312,10%,"Normal(0.02,0.001)",0.00190052
+51,Wellington Airport,25,Returning Residents,6,185328,10%,"Normal(0.02,0.001)",0.066306407
+52,Whenuapai Airport,26,Returning Residents,6,,10%,"Normal(0.02,0.001)",0
+53,Auckland Airport,16,Visitors,7,2016544,10%,"Normal(0.02,0.001)",0.721476452
+54,Christchurch Airport,17,Visitors,7,413104,10%,"Normal(0.02,0.001)",0.147799804
+55,Dunedin Airport,18,Visitors,7,15360,10%,"Normal(0.02,0.001)",0.005495481
+56,Hawke's Bay Airport,19,Visitors,7,,10%,"Normal(0.02,0.001)",0
+57,Invercargill Airport,20,Visitors,7,,10%,"Normal(0.02,0.001)",0
+58,Nelson Airport,21,Visitors,7,,10%,"Normal(0.02,0.001)",0
+59,Palmerston North Airport,22,Visitors,7,,10%,"Normal(0.02,0.001)",0
+60,Queenstown Airport,23,Visitors,7,159376,10%,"Normal(0.02,0.001)",0.057021335
+61,Rotorua Airport,24,Visitors,7,5312,10%,"Normal(0.02,0.001)",0.00190052
+62,Wellington Airport,25,Visitors,7,185328,10%,"Normal(0.02,0.001)",0.066306407
+63,Whenuapai Airport,26,Visitors,7,,10%,"Normal(0.02,0.001)",0
+64,Auckland,1,Used machinery,8,9729,10%,"Normal(0.5,0.1)",0.728327594
+65,Bluff,2,Used machinery,8,0,10%,"Normal(0.5,0.1)",0
+66,Dunedin,3,Used machinery,8,203,10%,"Normal(0.5,0.1)",0.015196886
+67,Gisborne,4,Used machinery,8,0,10%,"Normal(0.5,0.1)",0
+68,Lyttelton,5,Used machinery,8,54,10%,"Normal(0.5,0.1)",0.004042521
+69,Napier,7,Used machinery,8,505,10%,"Normal(0.5,0.1)",0.037805061
+70,Nelson,8,Used machinery,8,448,10%,"Normal(0.5,0.1)",0.033537955
+71,New Plymouth,9,Used machinery,8,0,10%,"Normal(0.5,0.1)",0
+72,Opua (Bay of Islands),10,Used machinery,8,0,10%,"Normal(0.5,0.1)",0
+73,Picton,11,Used machinery,8,0,10%,"Normal(0.5,0.1)",0
+74,Port Chalmers,12,Used machinery,8,0,10%,"Normal(0.5,0.1)",0
+75,Tauranga,13,Used machinery,8,266,10%,"Normal(0.5,0.1)",0.019913161
+76,Timaru,14,Used machinery,8,0,10%,"Normal(0.5,0.1)",0
+77,Wellington,15,Used machinery,8,2153,10%,"Normal(0.5,0.1)",0.161176823
+78,Auckland,1,Sea containers,2,326657,10%,"Normal(3,0.5)",0.415939176
+79,Bluff,2,Sea containers,2,26419,10%,"Normal(3,0.5)",0.033639864
+80,Dunedin,3,Sea containers,2,3049,10%,"Normal(3,0.5)",0.003882355
+81,Lyttelton,5,Sea containers,2,67883,10%,"Normal(3,0.5)",0.086436841
+82,Marsden Point,6,Sea containers,2,867,10%,"Normal(3,0.5)",0.001103969
+83,Napier,7,Sea containers,2,32081,10%,"Normal(3,0.5)",0.040849407
+84,Nelson,8,Sea containers,2,13903,10%,"Normal(3,0.5)",0.01770298
+85,New Plymouth,9,Sea containers,2,11,10%,"Normal(3,0.5)",1.40E-05
+86,Port Chalmers,12,Sea containers,2,25834,10%,"Normal(3,0.5)",0.032894971
+87,Tauranga,13,Sea containers,2,242844,10%,"Normal(3,0.5)",0.309218334
+88,Timaru,14,Sea containers,2,22102,10%,"Normal(3,0.5)",0.028142938
+89,Wellington,15,Sea containers,2,23691,10%,"Normal(3,0.5)",0.030166245
+90,Auckland,1,Wood packaging,4,65331.4,10%,"Normal(3,0.5)",0.415942883
+91,Bluff,2,Wood packaging,4,5283.8,10%,"Normal(3,0.5)",0.033640164
+92,Dunedin,3,Wood packaging,4,609.8,10%,"Normal(3,0.5)",0.00388239
+93,Lyttelton,5,Wood packaging,4,13576.6,10%,"Normal(3,0.5)",0.086437611
+94,Marsden Point,6,Wood packaging,4,173.4,10%,"Normal(3,0.5)",0.001103979
+95,Napier,7,Wood packaging,4,6416.2,10%,"Normal(3,0.5)",0.040849771
+96,Nelson,8,Wood packaging,4,2780.6,10%,"Normal(3,0.5)",0.017703138
+97,New Plymouth,9,Wood packaging,4,2.2,10%,"Normal(3,0.5)",1.40067E-05
+98,Port Chalmers,12,Wood packaging,4,5166.8,10%,"Normal(3,0.5)",0.032895265
+99,Tauranga,13,Wood packaging,4,48568.8,10%,"Normal(3,0.5)",0.30922109
+100,Timaru,14,Wood packaging,4,4420.4,10%,"Normal(3,0.5)",0.028143189
+101,Wellington,15,Wood packaging,4,4738.2,10%,"Normal(3,0.5)",0.030166514
+102,Auckland,1,Used machinery + transport,10,9729,10%,"Normal(0.5,0.1)",0.728327594
+103,Bluff,2,Used machinery + transport,10,0,10%,"Normal(0.5,0.1)",0
+104,Dunedin,3,Used machinery + transport,10,203,10%,"Normal(0.5,0.1)",0.015196886
+105,Gisborne,4,Used machinery + transport,10,0,10%,"Normal(0.5,0.1)",0
+106,Lyttelton,5,Used machinery + transport,10,54,10%,"Normal(0.5,0.1)",0.004042521
+107,Napier,7,Used machinery + transport,10,505,10%,"Normal(0.5,0.1)",0.037805061
+108,Nelson,8,Used machinery + transport,10,448,10%,"Normal(0.5,0.1)",0.033537955
+109,New Plymouth,9,Used machinery + transport,10,0,10%,"Normal(0.5,0.1)",0
+110,Opua (Bay of Islands),10,Used machinery + transport,10,0,10%,"Normal(0.5,0.1)",0
+111,Picton,11,Used machinery + transport,10,0,10%,"Normal(0.5,0.1)",0
+112,Port Chalmers,12,Used machinery + transport,10,0,10%,"Normal(0.5,0.1)",0
+113,Tauranga,13,Used machinery + transport,10,266,10%,"Normal(0.5,0.1)",0.019913161
+114,Timaru,14,Used machinery + transport,10,0,10%,"Normal(0.5,0.1)",0
+115,Wellington,15,Used machinery + transport,10,2153,10%,"Normal(0.5,0.1)",0.161176823
+116,Auckland,1,Sea containers + transport,9,326657,10%,"Normal(3,0.5)",0.415939176
+117,Bluff,2,Sea containers + transport,9,26419,10%,"Normal(3,0.5)",0.033639864
+118,Dunedin,3,Sea containers + transport,9,3049,10%,"Normal(3,0.5)",0.003882355
+119,Lyttelton,5,Sea containers + transport,9,67883,10%,"Normal(3,0.5)",0.086436841
+120,Marsden Point,6,Sea containers + transport,9,867,10%,"Normal(3,0.5)",0.001103969
+121,Napier,7,Sea containers + transport,9,32081,10%,"Normal(3,0.5)",0.040849407
+122,Nelson,8,Sea containers + transport,9,13903,10%,"Normal(3,0.5)",0.01770298
+123,New Plymouth,9,Sea containers + transport,9,11,10%,"Normal(3,0.5)",1.40E-05
+124,Port Chalmers,12,Sea containers + transport,9,25834,10%,"Normal(3,0.5)",0.032894971
+125,Tauranga,13,Sea containers + transport,9,242844,10%,"Normal(3,0.5)",0.309218334
+126,Timaru,14,Sea containers + transport,9,22102,10%,"Normal(3,0.5)",0.028142938
+127,Wellington,15,Sea containers + transport,9,23691,10%,"Normal(3,0.5)",0.030166245
+128,Auckland Airport,16,Letters & express parcels,11,40000000,10%,"Normal(1,0.2)",1
+129,Auckland,1,Bulk parcels,12,4000000,10%,"Normal(1,0.2)",0.5
+130,Tauranga,13,Bulk parcels,12,4000000,10%,"Normal(1,0.2)",0.5

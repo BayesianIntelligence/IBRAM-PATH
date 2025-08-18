@@ -50,6 +50,7 @@ $(document).ready(function() {
 });
 
 
+
 function viewOutput(scenarioId) {
     window.location.href = '/scenarioOutput?scenarioId='+scenarioId
 }
@@ -624,11 +625,11 @@ function colorPolys() {
 		let val = null;
 
 		if (mapDiff) {
-			const current = mapData[code]?.uPeSqKm ?? 0;
-			const base = baseMapData[code]?.uPeSqKm ?? 0;
+			const current = mapData[code]?.val ?? 0;
+			const base = baseMapData[code]?.val ?? 0;
 			val = current - base;
 		} else {
-			val = mapData[code]?.uPeSqKm ?? null;
+			val = mapData[code]?.val ?? null;
 		}
 
 		polys[i].style.fill = val != null ? colorPoly(val) : 'white';
@@ -688,22 +689,25 @@ async function updateMap() {
 	month = params.month;
 
 	const result = await $.getJSON('/getMapData', { scenarioId, stage, month });
-	mapData = result['mapData']
 	baseMapData = result['baseMapData']
+	mapData = result['mapData']
+	minVal = result['min']
+	maxVal = result['max']
 
 	if(mapDiff){
 		values = Object.keys(mapData).map(code => {
-				const current = mapData[code]?.uPeSqKm ?? 0;
-				const base = baseMapData[code]?.uPeSqKm ?? 0;
+				const current = mapData[code]?.val ?? 0;
+				const base = baseMapData[code]?.val ?? 0;
 				return current - base;
 			});
+		minVal = Math.min(...values);
+		maxVal = Math.max(...values);
 	}
 	else {
-		values = Object.values(mapData).map(entry => entry.uPeSqKm);
+		values = Object.values(mapData).map(entry => entry.val);
 	}
 
-	minVal = Math.min(...values);
-	maxVal = Math.max(...values);
+	// maxVal = 0.06
 	
 	colorPolys();
 	createLegend({

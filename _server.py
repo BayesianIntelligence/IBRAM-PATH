@@ -73,7 +73,7 @@ class IBRAMServer(RequestUtils):
 				statusText, statusI = self.getScenarioRunStatus(row['id'])
 				# print(row['id'], statusText, statusI)
 				scenarioList.append(n('div.scenario'+('.isBase' if row['isBase'] else ''), dataId=row['id'], c=[
-					n('span.name', n('a', href=f"/scenario?id={row['id']}", c=toHtml(row['name']))),					
+					n('span.name', n('a', href=f'javascript:scenarioTable({row["id"]});', c=toHtml(row['name']))),	
 					n('span.actions', c=[
 						n('span.table', title="Table", onclick='scenarioTable({});'.format(row['id']), c=n('i', Class='fas fa-fw fa-table')),		
 						n('span.run'+('.hide' if statusI == 1 else ''), title="Update", onclick='runScenario({});'.format(row['id']), c=n('i', Class="fas fa-fw fa-bolt")),
@@ -340,42 +340,35 @@ class IBRAMServer(RequestUtils):
 				).str()	
 
 
-		
-	outputPrefixMap = {
-		'cs': 'CS_',
-		'ls': 'LS_',
-		'habitat': 'Habitat_Suitability_',
-		'exposure': 'Exposure_Pests_Density_',
-		'disperse': 'Disperse_Pests_Density_',
-		'accumulated': 'x_Pests_',
-		'establishment': 'x_Establishment__',
-		'spread': 'x_Spread__',
-		'consequencesEconomic': 'Economic_Consequences_',
-		'consequencesEnvironmental': 'Environmental_Consequences_',
-		'consequencesHealth': 'Human_Health_Consequences_',
-		'consequencesSocial': 'Social_Cultural_Consequences_',
-	}
-
 	@cherrypy.expose
 	def getMapData(self, scenarioId, stage, month):
-
+		print(scenarioId, stage, month)
+		
 		def getScenarioMapData(scenarioId, stage, month):
 			scenarioDir = utils.getOutputDir(scenarioId)
 			month = int(month)
-			
-			outputPrefix = self.outputPrefixMap[stage]
-			fn = os.path.join('inputs', '10kmHexClippedNZTM', '10kmHexClippedNZTM.csv')
+
+			fn = os.path.join('inputs', 'maps', '7kmHexNZ.csv')
 			df_hex = pd.read_csv(fn)
-			
-			fn = os.path.join(scenarioDir, '{stage}{month}.csv'.format(stage=outputPrefix,month=month))
-			df = pd.read_csv(fn)
-			
-			df = pd.merge(df, df_hex, on='Code', how='inner')
-			
-			df = df[df['area_sqkm'] > 20]
-		
-			mapData = df.set_index('Code')[['uPeSqKm', 'EA_Name']].to_dict(orient='index')
-			return mapData
+
+			fn = os.path.join(scenarioDir, f'{stage}.csv')
+			df = pd.read_csv(fn).set_index('Code')
+
+			min_val = 0.0#float(df.min().min())
+			max_val = float(df.max().max())
+
+			df = pd.merge(df, df_hex, on='Code', how='inner').set_index('Code')
+			df = df[df['area'] > 20]
+
+			col = utils.month(month) if len(stage.split('_')) > 1 else f'{stage}_{month}'
+			df = df[[col, 'Name']].rename(columns={col: 'val'})
+
+			df['val'] = df['val'].apply(lambda x: float(x) if pd.notna(x) else None)
+			df['Name'] = df['Name'].astype(str)
+
+			mapData = df.to_dict(orient='index')
+			return mapData, min_val, max_val
+
 				
 
 		with serverDb() as db:
@@ -383,13 +376,16 @@ class IBRAMServer(RequestUtils):
 			baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])
 			
 
-		mapData = getScenarioMapData(scenarioId, stage, month)
 		baseMapData = getScenarioMapData(baseScenarioId, stage, month)
-		
+		mapData, min, max = getScenarioMapData(scenarioId, stage, month)
+
 		cherrypy.response.headers['Content-Type'] = 'application/json'
 		return json.dumps({
 			'mapData': mapData,
-			'baseMapData': baseMapData
+			'baseMapData': baseMapData,
+			'min': min,
+			'max': max
+	
 		}).encode('utf-8')
 	
 	@cherrypy.expose
@@ -399,29 +395,23 @@ class IBRAMServer(RequestUtils):
 			project = db.queryRow('SELECT runLength FROM project WHERE id = ?', [scenario['projectId']])
 			
 		scenarioDir = utils.getOutputDir(scenarioId)
-		outputPrefix = self.outputPrefixMap[stage]
 		numMonths = project['runLength']	
 		locationCode = int(locationCode)
 			
-		timeData = []
+		fn = os.path.join(scenarioDir, f'{stage}.csv')
+		df = pd.read_csv(fn).set_index('Code')
 		
-		for month in range(numMonths):
-			fn = os.path.join(scenarioDir, '{stage}{month}.csv'.format(stage=outputPrefix,month=month))
-			df = pd.read_csv(fn)
-			
-			value = df.loc[df['Code'] == locationCode, 'uPeSqKm'].values[0]
-			
-			timeData.append(value)
-			
-		# print(timeData)
+		timeData = (df.loc[int(locationCode)].tolist()*numMonths)[:numMonths]
+		# timeData = [round(x, 10) for x in timeData]
 		
 		return json.dumps(timeData)
 
 
 	def getPlaces(self):
-		fn = os.path.join('inputs', '10kmHexClippedNZTM', '10kmHexClippedNZTM.csv')
+		# fn = os.path.join('inputs', '10kmHexClippedNZTM', '10kmHexClippedNZTM.csv')
+		fn = os.path.join('inputs', 'maps', '7kmHexNZ.csv')
 		df = pd.read_csv(fn)	
-		places = df.set_index('Code')['EA_Name'].to_dict()
+		places = df.set_index('Code')['Name'].to_dict()
 		return places
 	
 
@@ -433,14 +423,27 @@ class IBRAMServer(RequestUtils):
 			scenario = db.queryRow('SELECT projectId FROM scenario WHERE id = ?', [scenarioId])
 			project = db.queryRow('SELECT name FROM project WHERE id = ?', [scenario['projectId']])
 			fileName = f"{project['name']}.xlsx"
-	
+
 			tables = [
-				'vector', 'units', 'infestationRate', 'vectorInfectionRate', 'itemInfectionRate',
-				'itemVectorTransmissionRate', 'preBorderVectorDetection', 'preBorderItemDetection',
-				'vectorsPerUnit', 'vectorPathwayDetection', 'itemPathwayDetection', 'vectorDailyEscapeRate',
-				'itemDailyEscapeRate', 'vectorDailyMortalityRate', 'itemDailyMortalityRate',
-				'vectorTransmissionRate', 'mortalityRate', 'establishmentRate', 'spreadRate',
-				'eradicationRate', 'landSuitability', 'consequences', 'eradicationDetection'
+				"carrier",
+				"units",
+				"carrierRate",
+				"carriersPerUnit",
+				"carrierInfectionRate",
+				"preborderDetection",
+				"pathwayDetection",
+				"carrierDailyMortalityRate",
+				"pathogenDailyMortalityRate",
+				"carrierDailyExitRate",
+				"carrierDispersal",
+				"transmissionRate",
+				"hostMortalityRate",
+				"establishmentRate",
+				"establishmentDetection",
+				"establishmentMortalityRate",
+				"spreadRate",
+				"landSuitability",
+				"consequences"
 			]
 					
 			with BytesIO() as output:
@@ -466,14 +469,27 @@ class IBRAMServer(RequestUtils):
 			isBase = db.queryValue('select isBase from scenario where id = ?', [scenarioId])
 			projectId = db.queryValue('select projectId from scenario where id = ?', [scenarioId])
 			db.query('delete from scenario where id = ?', [scenarioId])
-			
+
 			tables = [
-				'vector', 'units', 'infestationRate', 'vectorInfectionRate', 'itemInfectionRate',
-				'itemVectorTransmissionRate', 'preBorderVectorDetection', 'preBorderItemDetection',
-				'vectorsPerUnit', 'vectorPathwayDetection', 'itemPathwayDetection', 'vectorDailyEscapeRate',
-				'itemDailyEscapeRate', 'vectorDailyMortalityRate', 'itemDailyMortalityRate',
-				'vectorTransmissionRate', 'mortalityRate', 'establishmentRate', 'spreadRate',
-				'eradicationRate', 'landSuitability', 'consequences', 'eradicationDetection'
+				"carrier",
+				"units",
+				"carrierRate",
+				"carriersPerUnit",
+				"carrierInfectionRate",
+				"preborderDetection",
+				"pathwayDetection",
+				"carrierDailyMortalityRate",
+				"pathogenDailyMortalityRate",
+				"carrierDailyExitRate",
+				"carrierDispersal",
+				"transmissionRate",
+				"hostMortalityRate",
+				"establishmentRate",
+				"establishmentDetection",
+				"establishmentMortalityRate",
+				"spreadRate",
+				"landSuitability",
+				"consequences"
 			]
 
 			for table in tables:
@@ -500,12 +516,25 @@ class IBRAMServer(RequestUtils):
 			scenarioId = db.queryValue('select last_insert_rowid()')
 
 			tables = [
-				'vector', 'units', 'infestationRate', 'vectorInfectionRate', 'itemInfectionRate',
-				'itemVectorTransmissionRate', 'preBorderVectorDetection', 'preBorderItemDetection',
-				'vectorsPerUnit', 'vectorPathwayDetection', 'itemPathwayDetection', 'vectorDailyEscapeRate',
-				'itemDailyEscapeRate', 'vectorDailyMortalityRate', 'itemDailyMortalityRate',
-				'vectorTransmissionRate', 'mortalityRate', 'establishmentRate', 'spreadRate',
-				'eradicationRate', 'landSuitability', 'consequences', 'eradicationDetection'
+				"carrier",
+				"units",
+				"carrierRate",
+				"carriersPerUnit",
+				"carrierInfectionRate",
+				"preborderDetection",
+				"pathwayDetection",
+				"carrierDailyMortalityRate",
+				"pathogenDailyMortalityRate",
+				"carrierDailyExitRate",
+				"carrierDispersal",
+				"transmissionRate",
+				"hostMortalityRate",
+				"establishmentRate",
+				"establishmentDetection",
+				"establishmentMortalityRate",
+				"spreadRate",
+				"landSuitability",
+				"consequences"
 			]
 
 			for table in tables:
@@ -520,7 +549,7 @@ class IBRAMServer(RequestUtils):
 
 			return str(scenarioId)
 				
-			
+
 	@cherrypy.expose
 	def addScenario(self, wb, scenarioId):
 		print('Adding scenario', scenarioId)
@@ -547,9 +576,10 @@ class IBRAMServer(RequestUtils):
 						s.cell(row=row, column=scenarioid_col).value = scenarioId
 						if id_col:
 							s.cell(row=row, column=id_col).value = None
-
+		
 		with serverDb() as db:
 			db.loadDataFromExcel(wb)
+
 			
 	@cherrypy.expose
 	def uploadScenario(self, projectId, sheet):
@@ -584,7 +614,7 @@ class IBRAMServer(RequestUtils):
 			return json.dumps(errorDetails)
 			
 		with serverDb() as db:
-			projectId = db.replace('project', {'id': -1, 'name': base, 'burnin': 12, 'runlength': 24, 'dispersalsd': 3.33}, 'id')
+			projectId = db.replace('project', {'id': -1, 'name': base, 'burnin': 12, 'runlength': 24, 'climateMap': 'Climate Temperate'}, 'id')
 			db.query('insert into scenario (name, projectId, isBase, active) values (?,?,?,?)', ['Base', projectId, True, True])
 			scenarioId = db.queryValue('select last_insert_rowid()')
 		
@@ -715,13 +745,13 @@ class IBRAMServer(RequestUtils):
 						ui.dialog(`<h2>Add Project</h2>
 							<p>Would you like to create a new project or upload an existing spreadsheet?`, {
 							buttons: [
-								$('<button>').text('Generate').on('click', function() {
-									//window.location.href='/generateInput'
-									ui.dismissDialogs();
-								}),
 								$('<button>').text('Upload').on('click', function() {
 									$('input.addProjectFile').val('');
 									$('input.addProjectFile').click();
+									ui.dismissDialogs();
+								}),
+								$('<button>').text('Generate').on('click', function() {
+									//window.location.href='/generateInput'
 									ui.dismissDialogs();
 								}),
 								$('<button>').text('Cancel').on('click', ui.dismissDialogs),
@@ -730,26 +760,27 @@ class IBRAMServer(RequestUtils):
 					});
 	
 					$('input.addProjectFile').on('change', function() {
-							var f = new FormData();
-							f.append('sheet', this.files[0], this.files[0].name);
-							$.post({
-								url: '/addProject',
-								data: f,
-								success: (data) => {
-									data = JSON.parse(data);
-									if(data.type == 'error') {
-										dismissDialogs();
-										ui.message(data.message);
-									}
-									else {
-										window.location.href = '/project?editName=1&id='+data;
-									}
-								},
-								contentType: false,
-								processData: false,
-							});
+						ui.dialog('<p>Loading, please wait...</p>');
+						var f = new FormData();
+						f.append('sheet', this.files[0], this.files[0].name);
+						$.post({
+							url: '/addProject',
+							data: f,
+							success: (data) => {
+								data = JSON.parse(data);
+								if(data.type == 'error') {
+									dismissDialogs();
+									ui.message(data.message);
+								}
+								else {
+									window.location.href = '/project?editName=1&id='+data;
+								}
+							},
+							contentType: false,
+							processData: false,
 						});
 					});
+				});
 			"""),
 		]
 		
@@ -792,7 +823,6 @@ class IBRAMServer(RequestUtils):
 			return runFileTemplate('basic.html', head = head, body = body, trail = [
 				n('li', RawHtml('<i class="fas fa-fw fa-sticky-note"></i> parameters')),
 			])
-
 
 	@cherrypy.expose
 	def saveSettings(self, **kwargs):
@@ -849,8 +879,6 @@ class IBRAMServer(RequestUtils):
 								n('input', type='text', name="runlength", value=project['runLength']),
 								n('label', 'Climate Map', title="Climate map to be used"), 
 								n('select', data=maps, name="climateMap",  selected=project['climateMap']),
-								n('label', 'Dispersal (Std Dev)', title="Standard deviation distance in meters for dispersal after exposure"), 
-								n('input', type='text', name="dispersalSd", value=project['dispersalSd']),
 								n('input', type='hidden', name="id", value=id),
 							),
 						),
@@ -876,12 +904,25 @@ class IBRAMServer(RequestUtils):
 			baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])	
 
 			tables = [
-				'vector', 'units', 'infestationRate', 'vectorInfectionRate', 'itemInfectionRate',
-				'itemVectorTransmissionRate', 'preBorderVectorDetection', 'preBorderItemDetection',
-				'vectorsPerUnit', 'vectorPathwayDetection', 'itemPathwayDetection', 'vectorDailyEscapeRate',
-				'itemDailyEscapeRate', 'vectorDailyMortalityRate', 'itemDailyMortalityRate',
-				'vectorTransmissionRate', 'mortalityRate', 'establishmentRate', 'spreadRate',
-				'eradicationRate', 'landSuitability', 'consequences', 'eradicationDetection'
+				"carrier",
+				"units",
+				"carrierRate",
+				"carriersPerUnit",
+				"carrierInfectionRate",
+				"preborderDetection",
+				"pathwayDetection",
+				"carrierDailyMortalityRate",
+				"pathogenDailyMortalityRate",
+				"carrierDailyExitRate",
+				"carrierDispersal",
+				"transmissionRate",
+				"hostMortalityRate",
+				"establishmentRate",
+				"establishmentDetection",
+				"establishmentMortalityRate",
+				"spreadRate",
+				"landSuitability",
+				"consequences"
 			]
 			
 			sheetsData = []
@@ -900,9 +941,6 @@ class IBRAMServer(RequestUtils):
 					'headerLabels': header_labels,
 					'tabExtra': []
 				})
-				# if table == 'preBorderVectorDetection':
-				# 	print(sheetsData)
-
 			tabButtons = n('div.tabButtons')
 			tabSheets = n('div.tabSheets')
 			tabSet = n('div.tabSet',
@@ -929,9 +967,7 @@ class IBRAMServer(RequestUtils):
 							dataName = sheetData['id'],
 							data = sheetData['table'],
 							headerLabels = sheetData['headerLabels'],
-							hidden=['id', 'scenarioId', 'itemId', 'vectorId', 'pathwayPointId'],
-							# readonly = ['item','vector'],
-							# omit = [],
+							hidden=['id', 'scenarioId', 'itemId', 'pathwayPointId', 'landcoverId'],
 							defaultDataCellHandler = lambda val, rowI, cellI: n('td', RawHtml(handleCellVal(val, sheetData['baseTable'][rowI][list(sheetData['table'][0].keys())[cellI]])))
 						) if sheetData.get('table') else None,
 						sheetData.get('tabExtra', ''),
@@ -941,6 +977,7 @@ class IBRAMServer(RequestUtils):
 				
 			return n('div.params',
 				n('style', """
+	  			.params { flex: 1; }
 				.params td.include { text-align: center; }
 				.params td { height: 1px; }
 				@-moz-document url-prefix() { .params td { height: 100%; } }
@@ -956,7 +993,7 @@ class IBRAMServer(RequestUtils):
 					o.activeSheet = o.activeSheet || 'units';
 					$('.tabSheet td div').toArray().map(el => {
 						let mgr = tableManager(el.closest('table'));
-						let readOnlys = ['item','source','subItem', 'vector','name','pathwayPoint','landcover'];
+						let readOnlys = ['item','source','subItem', 'carrier','name','pathwayPoint','landcover'];
 						if ( !readOnlys.includes(mgr.fieldIds[el.closest('td').cellIndex]) ) {
 							el.setAttribute('contenteditable', 'true');
 						}
@@ -967,7 +1004,7 @@ class IBRAMServer(RequestUtils):
 					setupParameterEditing();
 				});
 				"""),
-				n('div', RawHtml(tabSet)),
+				RawHtml(tabSet),
 				).str()	
 
 	@cherrypy.expose
@@ -1011,14 +1048,15 @@ class IBRAMServer(RequestUtils):
 				});
 				'''),
 			]
-			
 			body = [
-				n('h2', dataFieldEdit='/scenarioNameUpd?id={}&name='.format(id), c=n('span.value',toHtml(scenario['name']))),
-				n('div.controls', [
-					n('button.saveScenario', disabled='disabled', type='button', c='Save'),
-					n('button.download', type='button', c='Download'),
-				]),
-				self.scenarioTable(id)
+				n('div.scenarioPage',
+					n('h2', dataFieldEdit='/scenarioNameUpd?id={}&name='.format(id), c=n('span.value',toHtml(scenario['name']))),
+					n('div.controls', [
+						n('button.saveScenario', disabled='disabled', type='button', c='Save'),
+						n('button.download', type='button', c='Download'),
+					]),
+					RawHtml(self.scenarioTable(id))
+				),
 			]
 			
 			return runFileTemplate('basic.html', head = head, body = body, trail = [
@@ -1053,6 +1091,9 @@ class IBRAMServer(RequestUtils):
 		outCsvFn = os.path.join(outputDir, "Entries.csv")
 		df = pd.read_csv(outCsvFn)
 		df.columns = [col.upper() for col in df.columns]
+		df = df.sort_values(by=[ 'CARRIER', 'ITEM'])
+		
+		# print(df)
 		
 		if tableDiff == '1':
 			with serverDb() as db:
@@ -1068,9 +1109,11 @@ class IBRAMServer(RequestUtils):
 			diff_df[val_cols] = df[val_cols] - base_df[val_cols]
 			df = diff_df
 
+		# print(df)
 
-		df = df.drop(columns=['SCENARIOID','ITEMID','VECTORID'])
-		df = df[['ITEM', 'SUBITEM', 'SOURCE','VECTOR']+val_cols]
+		# df = df.drop(columns=['SCENARIOID','ITEMID'])
+		df = df[['CARRIER', 'SUBITEM', 'ITEM', 'SOURCE']+val_cols]
+
 		df = df.fillna('')
 		
 		vmin_raw = df[val_cols].min().min()
@@ -1079,15 +1122,21 @@ class IBRAMServer(RequestUtils):
 		vmin, vmax = -abs_max, abs_max	
 		cmap = 'bwr'
 
-		styled_df = df.style.background_gradient(cmap=cmap, vmin=vmin, vmax=vmax, subset=val_cols)
+		styled_df = df.style.background_gradient(cmap=cmap, vmin=vmin, vmax=vmax, subset=val_cols)		
 		styled_df = styled_df.format(
-			lambda x: '0' if x == 0 else f"{x:.5f}" if isinstance(x, float) else x
+			lambda x: (
+				'0' if x == 0
+				else f"{x:.6g}" if isinstance(x, float) and abs(x) >= 1
+				else f"{x:.5f}" if isinstance(x, float)
+				else x
+			)
 		)
-		# table = styled_df.hide(axis="index").render()
-		table = styled_df.hide(axis="index").to_html()
+		# table = styled_df.hide(axis="index").to_html(classes = 'dataTable')
+		table = styled_df.hide(axis="index").set_table_attributes('class="dataTable"').to_html()
 		
 
-		return str(n('div.tableContainer', RawHtml(table)))
+		# return RawHtml(table)
+		return table
 	
 
 	@cherrypy.expose
@@ -1143,7 +1192,7 @@ class IBRAMServer(RequestUtils):
 			isBase = scenario['isBase']
 			baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])
 		
-		print(isBase)
+		# print(isBase)
 		
 		monthsShort = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')
 		allMonths = [monthsShort[i%len(monthsShort)] for i in range(24)]
@@ -1179,7 +1228,8 @@ class IBRAMServer(RequestUtils):
 			.nzMap polygon { stroke: none !important; }
 			""").str()
 		
-		with open('_/images/10kmHexClippedNZTM.svg','r') as svgFile:
+		# with open('_/images/10kmHexClippedNZTM.svg','r') as svgFile:
+		with open('_/images/7kmHexNZ.svg','r') as svgFile:
 			body += svgFile.read()
 		
 		with open('_/images/nzoutline.svg','r') as svgFile:
@@ -1197,8 +1247,8 @@ class IBRAMServer(RequestUtils):
 			function formatRecord(rec) {
 				let sigFigs = 4;
 				var str = `
-					<h2>${toHtml(rec.EA_Name)}</h2>
-					<div><strong>mean/sq. km:</strong> <span>${toHtml(sigFig(rec.uPeSqKm, sigFigs))}</span></div>
+					<h2>${toHtml(rec.Name)}</h2>
+					<div><strong>Value:</strong> <span>${toHtml(sigFig(rec.val, sigFigs))}</span></div>
 					<div><br>Double click for dynamic view</div>
 				`;
 				return str;
@@ -1343,11 +1393,70 @@ class IBRAMServer(RequestUtils):
 
 
 	@cherrypy.expose
-	def scenarioOutput(self, scenarioId, type = 'map', locationCode = None, month = 0, stage = 'accumulated'):
+	def scenarioOutput(self, scenarioId, type = 'map', locationCode = None, month = 0, stage = 'pests'):
+		def make_exposure_nested_list():
+			return [
+				n('li', n('div', n('input',
+									type='radio',
+									name='displayValue',
+									value=f'exposure_{carrier}'.replace(' ', '_'),
+									checked=stage == f'exposure_{carrier}'.replace(' ', '_') or None),
+									carrier),
+					n('ul', *[
+						n('li', n('div', n('input',
+									type='radio',
+									name='displayValue',
+									value=f'exposure_{carrier}_{item}'.replace(' ', '_'),
+									checked=stage == f'exposure_{carrier}_{item}'.replace(' ', '_') or None),
+									item),
+							n('ul', *[
+								n('li', n('div',
+									n('input',
+									type='radio',
+									name='displayValue',
+									value=f'exposure_{carrier}_{item}_{name}'.replace(' ', '_'),
+									checked=stage == f'exposure_{carrier}_{item}_{name}'.replace(' ', '_') or None),
+									name))
+								for name in names
+							])
+						)
+						for item, names in items.items()
+					])
+				)
+				for carrier, items in exposureMap.items()
+			]
+		
+		def make_dispersal_nested_list():
+			return [
+				n('li', n('div', n('input',
+									type='radio',
+									name='displayValue',
+									value=f'dispersal_{carrier}'.replace(' ', '_'),
+									checked=stage == f'dispersal_{carrier}'.replace(' ', '_') or None),
+									carrier),
+				)
+				for carrier, items in exposureMap.items()
+			]
+
+
 		with serverDb() as db:
 			scenario = db.queryRow('select * from scenario where id = ?', [scenarioId])
 			project = db.queryRow('select * from project where id = ?', [scenario['projectId']])
+			exposurePoints = db.queryRows(f"""SELECT DISTINCT c.carrier, pp.item, pp.name FROM carrier c
+													LEFT JOIN pathwayPoint pp ON pp.itemId = c.itemId
+													WHERE scenarioId = ?
+								 					ORDER BY c.carrier, pp.id""", [scenarioId])
 			
+			exposureMap = {}
+			for row in exposurePoints:
+				carrier = row['carrier']
+				item = row['item']
+				name = row['name']
+				exposureMap.setdefault(carrier, {}).setdefault(item, []).append(name)
+				
+			# print(exposureMap)
+
+
 			if type == 'table':
 				output = self.outputTable(scenarioId)
 			elif type == 'map':
@@ -1357,7 +1466,6 @@ class IBRAMServer(RequestUtils):
 
 			head = [
 				n('script', '''
-				var displayField = 'uPeSqKm';
 				var projectId = '''+json.dumps(scenario['projectId'])+''';
 				var scenarioId = '''+json.dumps(scenarioId)+''';
 				var outputType = '''+json.dumps(type)+''';
@@ -1367,14 +1475,14 @@ class IBRAMServer(RequestUtils):
 						console.log($(this)[0].value)
 						console.log(outputType === 'table')
 						
-					if ($(this).val() === 'entry') {
-						window.location.href = changeQsUrl(window.location.href, {stage: $(this).val(), type: 'table'});
-					} else {
-						if(outputType == 'table') {
-							outputType = 'map';
+						if ($(this).val() === 'entry') {
+							window.location.href = changeQsUrl(window.location.href, {stage: $(this).val(), type: 'table'});
+						} else {
+							if(outputType == 'table') {
+								outputType = 'map';
+							}
+							window.location.href = changeQsUrl(window.location.href, {stage: $(this).val(),type: outputType});
 						}
-						window.location.href = changeQsUrl(window.location.href, {stage: $(this).val(),type: outputType});
-					}
 					});
 				});
 				'''),
@@ -1386,24 +1494,30 @@ class IBRAMServer(RequestUtils):
 				n('div.controls', []),
 				n('div.outputPanels', c=[
 					n('div.sideBar', c=[
-						n('h2', 'Run Information'),
 						n('section',
-							n('div', 'Values to display:'),
 							n('ul.displayValues',
-								n('li', n('div', n('input', type='radio', name='displayValue', value='entry', checked=stage=='entry' or None), 'Entry')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='cs', checked=stage=='cs' or None), 'Climate Suitability')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='ls', checked=stage=='ls' or None), 'Land Suitability')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='habitat', checked=stage=='habitat' or None), 'Habitat Suitability')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='exposure', checked=stage=='exposure' or None), 'Exposure')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='disperse', checked=stage=='disperse' or None), 'Disperse')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='accumulated', checked=stage=='accumulated' or None), 'Accumulated')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='establishment', checked=stage=='establishment' or None), 'Establishments')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='spread', checked=stage=='spread' or None), 'Spread')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesEconomic', checked=stage=='consequencesEconomic' or None), 'Consequences - Economic')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesEnvironmental', checked=stage=='consequencesEnvironmental' or None), 'Consequences - Environment')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesHealth', checked=stage=='consequencesHealth' or None), 'Consequences - Health')),
-								n('li', n('div', n('input', type='radio', name='displayValue', value='consequencesSocial', checked=stage=='consequencesSocial' or None), 'Consequences - Social')),
-							),
+								n('li', n('div', n('h3', 'Preborder')),
+									n('li', n('div', n('input', type='radio', name='displayValue', value='entry', checked=stage=='entry' or None), 'Entry')),
+								),
+		 						n('li', n('div', n('h3', 'Habitat Suitability')),
+										n('li', n('div', n('input', type='radio', name='displayValue', value='cs', checked=stage=='cs' or None), 'Climate Suitability')),
+										n('li', n('div', n('input', type='radio', name='displayValue', value='ls', checked=stage=='ls' or None), 'Land Suitability')),
+										n('li', n('div', n('input', type='radio', name='displayValue', value='hs', checked=stage=='hs' or None), 'Habitat Suitability')),
+								),
+								n('li', n('div', n('h3', 'Exposure')), *make_exposure_nested_list()),
+								n('li', n('div', n('h3', 'Dispersal')), *make_dispersal_nested_list()),
+								n('li', n('div', n('h3', 'Establishment')),
+									n('li', n('div', n('input', type='radio', name='displayValue', value='pests', checked=stage=='pests' or None), 'Pests')),
+									n('li', n('div', n('input', type='radio', name='displayValue', value='establish', checked=stage=='establish' or None), 'Establishment')),
+									n('li', n('div', n('input', type='radio', name='displayValue', value='spread', checked=stage=='spread' or None), 'Spread')),
+								),
+								n('li', n('div', n('h3', 'Conseqences')),
+									n('li', n('div', n('input', type='radio', name='displayValue', value='econConseq', checked=stage=='econConseq' or None), 'Economic')),
+									n('li', n('div', n('input', type='radio', name='displayValue', value='environConseq', checked=stage=='environConseq' or None), 'Environment')),
+									n('li', n('div', n('input', type='radio', name='displayValue', value='healthConseq', checked=stage=='healthConseq' or None), 'Health')),
+									n('li', n('div', n('input', type='radio', name='displayValue', value='socialConseq', checked=stage=='socialConseq' or None), 'Social')),
+								),
+							)
 						),
 					]),
 					n('div.main.scrollable', c=RawHtml(output)),

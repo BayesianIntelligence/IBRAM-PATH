@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<smile version="1.0" id="Network1" numsamples="10000" discsamples="10000">
+	<nodes>
+		<equation id="pestsPast">
+			<definition>pestsPast=0</definition>
+			<property id="dynamic">Pests</property>
+		</equation>
+		<cpt id="LU">
+			<state id="v0" />
+			<state id="v1" />
+			<state id="v2" />
+			<state id="v3" />
+			<state id="v4" />
+			<state id="v5" />
+			<state id="v6" />
+			<state id="v7" />
+			<state id="v8" />
+			<state id="v9" />
+			<state id="v10" />
+			<state id="v11" />
+			<state id="v12" />
+			<state id="v13" />
+			<probabilities>0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857142 0.07142857142857173</probabilities>
+		</cpt>
+		<equation id="ls">
+			<parents>LU</parents>
+			<definition lower="0" upper="2">ls=Switch(LU,0,1,1,2,2,2,3,2,4,2,5,0,6,2,7,0,8,2,9,3,10,2,11,0,12,2)</definition>
+		</equation>
+		<equation id="GS">
+			<definition>GS=0</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="EI">
+			<definition lower="0" upper="100">EI=Uniform(0,100)</definition>
+			<discretization>
+				<interval label="State0" upper="50" />
+				<interval label="State1" upper="100" />
+			</discretization>
+		</equation>
+		<equation id="GI">
+			<definition lower="0" upper="100">GI=Uniform(0,100)</definition>
+			<discretization>
+				<interval label="State0" upper="50" />
+				<interval label="State1" upper="100" />
+			</discretization>
+		</equation>
+		<equation id="CI">
+			<parents>GS EI GI</parents>
+			<definition>CI=If(GS=1,GI,EI)</definition>
+		</equation>
+		<equation id="cs">
+			<parents>CI</parents>
+			<definition lower="0" upper="5">cs=If(CI&gt;=20,3,If(CI&gt;=5,2,If(CI&gt;=0.5,1,0)))</definition>
+		</equation>
+		<equation id="hs">
+			<parents>ls cs</parents>
+			<definition lower="0" upper="2">hs=Min(cs,ls)</definition>
+			<discretization>
+				<interval label="State0" upper="1" />
+				<interval label="State1" upper="2" />
+			</discretization>
+		</equation>
+		<equation id="HMR">
+			<parents>hs</parents>
+			<definition>HMR=Switch(hs,0,1,1,0.15,2,0.1,3,0.05)</definition>
+		</equation>
+		<equation id="pestsEntering">
+			<definition>pestsEntering=0</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="pests">
+			<parents>pestsPast HMR pestsEntering</parents>
+			<definition>pests=pestsPast*(1-HMR)+pestsEntering</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="establishPast">
+			<definition>establishPast=0</definition>
+			<property id="dynamic">Establishment_</property>
+		</equation>
+		<equation id="ER">
+			<parents>hs</parents>
+			<definition lower="0" upper="1">ER=Switch(hs,0,0,1,0.001,2,0.005,3,0.01)</definition>
+		</equation>
+		<equation id="EMR">
+			<parents>hs</parents>
+			<definition>EMR=Switch(hs,0,1,1,0.5,2,0.1,3,0)</definition>
+		</equation>
+		<equation id="detectionRate">
+			<definition>detectionRate=0</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="treatmentRateForUndetected">
+			<definition>treatmentRateForUndetected=0</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="treatmentEfficacy">
+			<definition>treatmentEfficacy=0</definition>
+			<discretization>
+				<interval label="State0" upper="0" />
+				<interval label="State1" upper="1" />
+			</discretization>
+		</equation>
+		<equation id="eradEfficiacy">
+			<parents>detectionRate treatmentRateForUndetected treatmentEfficacy</parents>
+			<definition lower="0" upper="1">eradEfficiacy=(detectionRate+(1-detectionRate)*treatmentRateForUndetected)*treatmentEfficacy</definition>
+		</equation>
+		<equation id="establish">
+			<parents>ER establishPast eradEfficiacy pests EMR</parents>
+			<definition>establish=establishPast*(1-eradEfficiacy)*(1-EMR)+(1-establishPast)*(1-(1-ER)^pests)</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="SR">
+			<parents>hs</parents>
+			<definition lower="0" upper="1">SR=Switch(hs,0,0,1,0.25,2,0.5,3,0.9)</definition>
+		</equation>
+		<equation id="spread">
+			<parents>establish SR</parents>
+			<definition>spread=establish*SR</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="econEstab">
+			<parents>LU</parents>
+			<definition lower="0" upper="1000000">econEstab=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="econSpread">
+			<parents>LU</parents>
+			<definition lower="0" upper="1000000">econSpread=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="econConseq">
+			<parents>econEstab establish econSpread spread</parents>
+			<definition lower="0" upper="10000000">econConseq=econEstab*establish+econSpread*spread</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="environEstab">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">environEstab=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="environSpread">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">environSpread=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="environConseq">
+			<parents>environEstab establish environSpread spread</parents>
+			<definition lower="0" upper="1000">environConseq=environEstab*establish+environSpread*spread</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="healthEstab">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">healthEstab=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="healthSpread">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">healthSpread=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="healthConseq">
+			<parents>healthEstab establish healthSpread spread</parents>
+			<definition lower="0" upper="1000">healthConseq=healthEstab*establish+healthSpread*spread</definition>
+			<property id="output">true</property>
+		</equation>
+		<equation id="socialEstab">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">socialEstab=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="socialSpread">
+			<parents>LU</parents>
+			<definition lower="0" upper="100">socialSpread=Switch(LU,0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,8,0,9,0,10,0,11,0,12,0)</definition>
+		</equation>
+		<equation id="socialConseq">
+			<parents>socialEstab establish socialSpread spread</parents>
+			<definition lower="0" upper="1000">socialConseq=socialEstab*establish+socialSpread*spread</definition>
+			<property id="output">true</property>
+		</equation>
+	</nodes>
+	<extensions>
+		<genie version="1.0" app="GeNIe 5.0.4830.2 1db5aed84d71a00" name="Network1">
+			<node id="pestsPast">
+				<name>pestsPast</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>23 391 118 450</position>
+			</node>
+			<node id="pests">
+				<name>pests</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>521 392 616 451</position>
+			</node>
+			<node id="HMR">
+				<name>HMR</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>316 317 411 376</position>
+			</node>
+			<node id="establishPast">
+				<name>establishPast</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>30 788 125 847</position>
+			</node>
+			<node id="establish">
+				<name>establish</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>521 793 616 852</position>
+			</node>
+			<node id="spread">
+				<name>spread</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>521 1042 616 1101</position>
+			</node>
+			<node id="SR">
+				<name>SR</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>330 939 425 998</position>
+			</node>
+			<node id="eradEfficiacy">
+				<name>eradEfficiacy</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>153 703 248 762</position>
+			</node>
+			<node id="econConseq">
+				<name>econConseq</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>685 699 780 758</position>
+			</node>
+			<node id="environConseq">
+				<name>environConseq</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>685 844 780 903</position>
+			</node>
+			<node id="healthConseq">
+				<name>healthConseq</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>685 990 780 1049</position>
+			</node>
+			<node id="econEstab">
+				<name>econEstab</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>852 648 947 707</position>
+			</node>
+			<node id="econSpread">
+				<name>econSpread</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>852 725 947 784</position>
+			</node>
+			<node id="environEstab">
+				<name>environEstab</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>852 802 947 861</position>
+			</node>
+			<node id="environSpread">
+				<name>environSpread</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>852 880 947 939</position>
+			</node>
+			<node id="healthEstab">
+				<name>healthEstab</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>852 957 947 1016</position>
+			</node>
+			<node id="healthSpread">
+				<name>healthSpread</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>852 1035 947 1094</position>
+			</node>
+			<node id="socialConseq">
+				<name>socialConseq</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>685 1136 780 1195</position>
+			</node>
+			<node id="socialEstab">
+				<name>socialEstab</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>852 1112 947 1171</position>
+			</node>
+			<node id="socialSpread">
+				<name>socialSpread</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>852 1190 947 1249</position>
+			</node>
+			<node id="ls">
+				<name>ls</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1142 165 1237 224</position>
+				<barchart width="128" height="72" />
+			</node>
+			<node id="hs">
+				<name>hs</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1043 255 1138 314</position>
+			</node>
+			<node id="EMR">
+				<name>EMR</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>313 702 408 761</position>
+			</node>
+			<node id="EI">
+				<name>EI</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1078 3 1173 62</position>
+			</node>
+			<node id="cs">
+				<name>cs</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1040 168 1135 227</position>
+			</node>
+			<node id="GI">
+				<name>GI</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1220 1 1315 60</position>
+			</node>
+			<node id="GS">
+				<name>GS</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>970 6 1065 65</position>
+			</node>
+			<node id="CI">
+				<name>CI</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1083 80 1178 139</position>
+			</node>
+			<node id="LU">
+				<name>LU</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>1381 160 1476 219</position>
+				<barchart width="263" height="143" />
+			</node>
+			<node id="ER">
+				<name>ER</name>
+				<interior color="ccffcc" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>447 704 542 763</position>
+			</node>
+			<node id="pestsEntering">
+				<name>pestsEntering</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>520 161 615 220</position>
+			</node>
+			<node id="detectionRate">
+				<name>detectionRate</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>9 593 104 652</position>
+			</node>
+			<node id="treatmentRateForUndetected">
+				<name>treatmentRateForUndetected</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>121 591 216 650</position>
+			</node>
+			<node id="treatmentEfficacy">
+				<name>treatmentEfficacy</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>235 593 330 652</position>
+			</node>
+		</genie>
+	</extensions>
+</smile>

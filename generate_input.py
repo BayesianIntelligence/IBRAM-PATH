@@ -14,8 +14,7 @@ with serverDb() as db:
 months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 detection = ['DETECTIONRATE','TREATMENTRATEFORUNDETECTED','TREATMENTEFFICACY']
 suitablity = ['FAVOURABLE','SUITABLE','MARGINAL','UNSUITABLE']
-conseq = ['ECON_EST','ECON_SPREAD','ENV_EST','ENV_SPREAD','SOC_EST','SOC_SPREAD','HEALTH_EST','HEALTH_SPREAD']
-
+conseq = ['ECONESTAB','ECONSPREAD','ENVIRONESTAB','ENVIRONSPREAD','HEALTHESTAB','HEALTHSPREAD','SOCIALESTAB','SOCIALSPREAD']
 
 df = pd.read_csv('driver.csv')
 df = df[['CARRIER', 'SUBITEM','ITEM', 'SOURCE']]
@@ -29,16 +28,16 @@ landCover_df.columns = [col.upper() for col in landCover_df.columns]
 
 
 base_cols = {
-	'carriers': ['CARRIER', 'SUBITEM','ITEM', 'ITEMID', 'SOURCE'],
+	'carrier': ['CARRIER', 'SUBITEM','ITEM', 'ITEMID', 'SOURCE'],
 	'units': ['SUBITEM','ITEM', 'ITEMID', 'SOURCE'] + months,
 	'carrierRate': ['CARRIER', 'SUBITEM', 'ITEM', 'ITEMID', 'SOURCE'] + months,
 	'carrierInfectionRate': ['CARRIER', 'SUBITEM', 'ITEM', 'ITEMID', 'SOURCE'] + months,
 	'carriersPerUnit': ['CARRIER', 'SUBITEM', 'ITEM', 'ITEMID'] + months,
 	'preborderDetection': ['CARRIER', 'SUBITEM', 'ITEM', 'ITEMID', 'SOURCE'] + detection,
 	'pathwayDetection': ['CARRIER', 'ITEM', 'ITEMID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + detection,
-	'carrierMortalityRate': ['CARRIER', 'ITEM', 'ITEMID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
-	'pathogenMortalityRate': ['CARRIER', 'ITEM', 'ITEMID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
-	'carrierExitRate': ['CARRIER', 'ITEM', 'ITEMID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
+	'carrierDailyMortalityRate': ['CARRIER', 'ITEM', 'ITEMID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
+	'pathogenDailyMortalityRate': ['CARRIER', 'ITEM', 'ITEMID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
+	'carrierDailyExitRate': ['CARRIER', 'ITEM', 'ITEMID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
 	'carrierDispersal': ['CARRIER', 'SD'],
 	'transmissionRate': ['CARRIER'] + suitablity,
 }
@@ -74,8 +73,8 @@ wb.remove(wb.active)
 
 for sheet_name, df in dataframes.items():
 	ws = wb.create_sheet(title=sheet_name)
-	ws.append(df.columns.tolist())
+	ws.append(['ID', 'SCENARIOID']+df.columns.tolist())
 	for row in df.itertuples(index=False):
-		ws.append(list(row))
+		ws.append([None, None]+list(row))
 
 wb.save("output.xlsx")

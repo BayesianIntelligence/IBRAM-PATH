@@ -86,12 +86,34 @@ def mergeExposureCsvs(csvFns, outCsvFn, weights = None, gran = 0, fields = ['uEx
 			outCsv.writerow(row)
 
 
-def month(mth):
-	# Throw error if not int
-	m = int(mth)
-	if m == -1:
-		return "Yearly"
+# def month(mth):
+# 	# Throw error if not int
+# 	m = int(mth)
+# 	if m == -1:
+# 		return "Yearly"
 
+# 	months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")
+# 	if m < len(months):
+# 		return months[m]
+	
+
+def month(m):
 	months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")
-	if m < len(months):
-		return months[m]
+	return months[m%12]
+
+
+
+def get_equations(netFn):
+	from _lib.bni_smile import Net
+	net = Net(netFn)
+	return [net.node(n.name()).equation() for n in net.nodes()]
+
+# 	model = {}
+# 	net = Net(netFn)
+# 	for node in net.nodes():
+# 		eq = net.node(node.name()).equation()
+# 		var, expr = eq.split("=", 1)
+# 		model[var] = expr
+# 	path = os.path.splitext(netFn)[0] + ".json"
+# 	with open(path, "w") as f:
+# 		json.dump(model, f, indent=2)

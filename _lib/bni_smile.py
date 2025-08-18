@@ -1476,13 +1476,16 @@ class Node(Node):
 					node = self.net.xdsl.find('.//nodes/equation[@id="'+self.name()+'"]/definition')
 				return node.text
 		else:
+			
 			nd = self._gNodeDef()
 			if self.type() == Node.MAU_NODE:
 				g.mau_SetExpression(nd, equationStr)
 			else:
+				# if g.equation_SetEquation(nd, equationStr) != 0: print('error', equationStr)
 				g.equation_SetEquation(nd, equationStr)
 			self._equationCache['equation'] = equationStr
 			self.net.needsUpdate = True
+			
 	
 		return self
 

@@ -414,11 +414,11 @@ class DB:
 					headers = self._readExcelRow(s, r)
 				else:
 					row = self._readExcelRow(s, r, headers)
+					# print(row)
 					row = {k: v for k, v in row.items() if not re.search(r'^hidden_', k)}
 					
 					if all(v is None for k, v in row.items()):
 						break
 					
 					self.replace(s.title, row, headers[0])
-
 

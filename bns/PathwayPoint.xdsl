@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<smile version="1.0" id="Network1" numsamples="1000" discsamples="10000">
+	<nodes>
+		<equation id="previousPestQuantity">
+			<definition>previousPestQuantity=Uniform(0,1000)</definition>
+		</equation>
+		<equation id="proportionToHere">
+			<definition>proportionToHere=Uniform(0,1)</definition>
+		</equation>
+		<equation id="PestQuantityArrives">
+			<parents>previousPestQuantity proportionToHere</parents>
+			<definition lower="0" upper="100000000">PestQuantityArrives=previousPestQuantity*proportionToHere</definition>
+		</equation>
+		<equation id="detectionRate">
+			<definition lower="0" upper="1">detectionRate=Uniform(0,1)</definition>
+		</equation>
+		<equation id="treatmentRateForUndetected">
+			<definition>treatmentRateForUndetected=Uniform(0,1)</definition>
+		</equation>
+		<equation id="TreatmentRate">
+			<parents>detectionRate treatmentRateForUndetected</parents>
+			<definition lower="0" upper="1">TreatmentRate=detectionRate+(1-detectionRate)*treatmentRateForUndetected</definition>
+		</equation>
+		<equation id="treatmentEfficacy">
+			<definition lower="0" upper="1">treatmentEfficacy=Uniform(0,1)</definition>
+		</equation>
+		<equation id="ProportionTreated">
+			<parents>TreatmentRate treatmentEfficacy</parents>
+			<definition lower="0" upper="1">ProportionTreated=TreatmentRate*treatmentEfficacy</definition>
+		</equation>
+		<equation id="PestQuantity">
+			<parents>PestQuantityArrives ProportionTreated</parents>
+			<definition lower="0" upper="10000000">PestQuantity=PestQuantityArrives*(1-ProportionTreated)</definition>
+		</equation>
+		<equation id="exit">
+			<definition>exit=Uniform(0,1)</definition>
+		</equation>
+		<equation id="exposures">
+			<parents>PestQuantity exit</parents>
+			<definition lower="0" upper="10000000">exposures=PestQuantity*exit</definition>
+		</equation>
+		<equation id="survive">
+			<definition lower="0" upper="1">survive=Uniform(0,1)</definition>
+		</equation>
+		<equation id="nextPestQuantity">
+			<parents>PestQuantity exposures survive</parents>
+			<definition lower="0" upper="1000000">nextPestQuantity=Trim((PestQuantity-exposures)*survive,0,1e+06)</definition>
+		</equation>
+	</nodes>
+	<extensions>
+		<genie version="1.0" app="GeNIe 5.0.4830.2 1db5aed84d71a00" name="Network1">
+			<node id="exposures">
+				<name>exposures</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>605 829 671 870</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="exit">
+				<name>exit</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>384 691 544 753</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="PestQuantity">
+				<name>PestQuantity</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>598 566 671 611</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="proportionToHere">
+				<name>proportionToHere</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>395 417 490 476</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="previousPestQuantity">
+				<name>previousPestQuantity</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>176 562 328 615</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="nextPestQuantity">
+				<name>nextPestQuantity</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>785 826 909 873</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="PestQuantityArrives">
+				<name>PestQuantityArrives</name>
+				<interior color="e5f6f7" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>374 568 513 609</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="survive">
+				<name>survive</name>
+				<interior color="ffff99" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>781 412 878 472</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="ProportionTreated">
+				<name>ProportionTreated</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>588 423 663 469</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="treatmentEfficacy">
+				<name>treatmentEfficacy</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>666 289 765 350</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="TreatmentRate">
+				<name>TreatmentRate</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>500 294 582 345</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="detectionRate">
+				<name>detectionRate</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>398 153 476 201</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+			<node id="treatmentRateForUndetected">
+				<name>treatmentRateForUndetected</name>
+				<interior color="cc99ff" />
+				<outline color="000080" />
+				<font color="000000" name="Arial" size="8" />
+				<position>525 147 700 207</position>
+				<barchart active="true" width="165" height="108" />
+			</node>
+		</genie>
+	</extensions>
+</smile>
