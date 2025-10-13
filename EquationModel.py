@@ -96,26 +96,17 @@ class EquationModel:
 		self.samples = None
 		self.updated = False
 
-
 		self.model = {eq.split("=", 1)[0].strip() : None for eq in equations}
-
-		# for eq in equations:
-		# 	var, expr = eq.split("=", 1)
-		# 	self.model[var.strip()] = None	
 		
 		for eq in equations:
 			var, expr = eq.split("=", 1)
 			self.update_equation(var, expr)
 
 		
-		# for eq in equations:
-		# 	var, expr = eq.split("=", 1)
-		# 	self.model[var.strip()] = eval(f"lambda d: {parse_expr(expr, vars)}")
-
-		
 	def update_equation(self, var, expr):
 		self.updated = False
 		vars = self.model.keys()
+		
 		for dep in re.findall(r'\b(' + '|'.join(re.escape(var) for var in vars) + r')\b', expr):
 			self.dependencies[dep].append(var.strip())
 					
