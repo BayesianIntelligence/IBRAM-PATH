@@ -1,0 +1,12 @@
+[
+  "carrierRate=Uniform(0,1)",
+  "detectionRate=Uniform(0,1)",
+  "treatmentEfficacy=Uniform(0,1)",
+  "treatmentRateForUndetected=Uniform(0,1)",
+  "TR=detectionRate*treatmentEfficacy+(1-detectionRate)*treatmentRateForUndetected",
+  "carriersPerUnit=Uniform(0,100)",
+  "units=Uniform(0,10000)",
+  "Carriers=units*carrierRate*carriersPerUnit*(1-TR)",
+  "infectionRate=Uniform(0,1)",
+  "Infected_Carriers=Carriers*infectionRate"
+]

@@ -4,8 +4,10 @@ import utils
 from bidb import DB
 from htm import node as n, toHtml, RawHtml
 
-from openpyxl import load_workbook
-from io import BytesIO
+from openpyxl import Workbook, load_workbook
+from io import *
+from types import SimpleNamespace
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
@@ -128,25 +130,25 @@ class IBRAMServer(RequestUtils):
 						db.query("INSERT INTO climateMap (name, fileName) VALUES (?, ?)", (row['name'], row['fileName']))
 						
 
-				def items(_self, tableValues):
+				def pathways(_self, tableValues):
 					
 					fields = tableValues['fields']
 					data_rows = [dict(zip(fields, row)) for row in tableValues['data']]
 
 					# Clear the entire table first
-					db.query("DELETE FROM item")
+					db.query("DELETE FROM pathway")
 
 					# Insert all provided rows (without id)
 					for row in data_rows:
-						db.query("INSERT INTO item (name) VALUES (?)", [row['name']])
+						db.query("INSERT INTO pathway (name) VALUES (?)", [row['name']])
 					
 
 				def pathwayPoints(_self, tableValues):
 					fields = tableValues['fields']
 					data_rows = [dict(zip(fields, row)) for row in tableValues['data']]
 					
-					item_rows = db.query("SELECT id, name FROM item")
-					item_lookup = {row['name']: row['id'] for row in item_rows}
+					pathway_rows = db.query("SELECT id, name FROM pathway")
+					pathway_lookup = {row['name']: row['id'] for row in pathway_rows}
 
 					# Clear the entire table first
 					db.query("DELETE FROM pathwayPoint")
@@ -154,13 +156,13 @@ class IBRAMServer(RequestUtils):
 					# Insert all provided rows (without id)
 					for row in data_rows:
 						db.query(
-							"INSERT INTO pathwayPoint (name, item, itemId, tableName, shape, timeAtSite) VALUES (?, ?, ?, ?, ?, ?)",
-							[row['name'], row['item'], item_lookup.get(row['item']), row['tableName'], row['shape'], row['timeAtSite']]
+							"INSERT INTO pathwayPoint (name, pathway, pathwayId, tableName, shape, timeAtSite) VALUES (?, ?, ?, ?, ?, ?)",
+							[row['name'], row['pathway'], pathway_lookup.get(row['pathway']), row['tableName'], row['shape'], row['timeAtSite']]
 						)
 
 			save = _Save()
 
-			for name, table in paramTables.items():
+			for name, table in paramTables.pathways():
 				print(name)
 				getattr(save, name)(table)
 
@@ -251,17 +253,17 @@ class IBRAMServer(RequestUtils):
 				),
 			]			
 
-			items = db.queryRows("""select * from item""")
-			itemHeaders = ['id', 'Item Name']			
-			itemsTabExtra = [
+			pathways = db.queryRows("""select * from pathway""")
+			pathwayHeaders = ['id', 'Pathway Name']			
+			pathwaysTabExtra = [
 				n('div',
-					n('button', type='button', c='Add Item', onclick='addItem()'),
-					n('button', type='button', c='Delete Item', onclick='deleteItem()'),
+					n('button', type='button', c='Add Pathway', onclick='addPathway()'),
+					n('button', type='button', c='Delete Pathway', onclick='deletePathway()'),
 				),
 			]
 
 			pathwayPoints = db.queryRows("""select * from pathwayPoint""")
-			pathwayPointsHeaders = ['id', 'Point Name', 'Item Name', 'itemId', 'Data Source', 'Type', 'Time At Site']
+			pathwayPointsHeaders = ['id', 'Point Name', 'Pathway Name', 'pathwayId', 'Data Source', 'Type', 'Time At Site']
 			pathwayPointsTabExtra = [
 				n('div',
 					n('button', type='button', c='Add Pathway Point', onclick='addPathwayPoint()'),
@@ -271,7 +273,7 @@ class IBRAMServer(RequestUtils):
 
 			sheetsData = [
 				{'id': 'climateMaps', 'tabName': 'Climate Maps', 'table': climateMaps, 'headerLabels': climateMapHeaders, 'tabExtra': climateMapTabExtra},
-				{'id': 'items', 'tabName': 'Items', 'table': items, 'headerLabels': itemHeaders, 'tabExtra': itemsTabExtra},
+				{'id': 'pathways', 'tabName': 'Pathways', 'table': pathways, 'headerLabels': pathwayHeaders, 'tabExtra': pathwaysTabExtra},
 				{'id': 'pathwayPoints', 'tabName': 'Pathway Points', 'table': pathwayPoints, 'headerLabels': pathwayPointsHeaders, 'tabExtra': pathwayPointsTabExtra},
 			]
 
@@ -295,7 +297,7 @@ class IBRAMServer(RequestUtils):
 							dataName = sheetData['id'],
 							data = sheetData['table'],
 							headerLabels = sheetData['headerLabels'],
-							hidden=['id', 'itemId'],
+							hidden=['id', 'pathwayId'],
 							readonly = ['actions'],
 							omit = [],
 							handlers = {
@@ -622,6 +624,89 @@ class IBRAMServer(RequestUtils):
 		self.addScenario(wb, scenarioId)
 		
 		return str(projectId)
+	
+			
+	@cherrypy.expose
+	def generateProject(self, sheet):
+		print('generating project', sheet.filename)
+
+		with serverDb() as db:
+			pathwayPoint_df = pd.read_sql_query("SELECT pathway as PATHWAY, pathwayId as PATHWAYID, name as PATHWAYPOINT, id as PATHWAYPOINTID FROM pathwayPoint", db.conn)
+			landCover_df = pd.read_sql_query("SELECT name as LANDCOVER, id as LANDCOVERID FROM landCover", db.conn)
+
+		months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+		detection = ['DETECTIONRATE','TREATMENTRATEFORUNDETECTED','TREATMENTEFFICACY']
+		suitablity = ['FAVOURABLE','SUITABLE','MARGINAL','UNSUITABLE']
+		conseq = ['ECONESTAB','ECONSPREAD','ENVIRONESTAB','ENVIRONSPREAD','HEALTHESTAB','HEALTHSPREAD','SOCIALESTAB','SOCIALSPREAD']
+
+		df = pd.read_csv(sheet.filename)
+		df = df[['CARRIER', 'ITEM','PATHWAY', 'SOURCE']]
+		df = df.merge(pathwayPoint_df, how='left', on='PATHWAY')
+		for var in months+detection+['SD']+suitablity:
+			df[var] = None
+		for var in ['SUITABILITY']+conseq:
+			landCover_df[var] = None
+		df.columns = [col.upper() for col in df.columns]
+		landCover_df.columns = [col.upper() for col in landCover_df.columns]
+
+
+		base_cols = {
+			'carrier': ['CARRIER', 'ITEM','PATHWAY', 'PATHWAYID', 'SOURCE'],
+			'units': ['ITEM','PATHWAY', 'PATHWAYID', 'SOURCE'] + months,
+			'carrierRate': ['CARRIER', 'ITEM', 'PATHWAY', 'PATHWAYID', 'SOURCE'] + months,
+			'carrierInfectionRate': ['CARRIER', 'ITEM', 'PATHWAY', 'PATHWAYID', 'SOURCE'] + months,
+			'carriersPerUnit': ['CARRIER', 'ITEM', 'PATHWAY', 'PATHWAYID'] + months,
+			'preborderDetection': ['CARRIER', 'ITEM', 'PATHWAY', 'PATHWAYID', 'SOURCE'] + detection,
+			'pathwayDetection': ['CARRIER', 'PATHWAY', 'PATHWAYID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + detection,
+			'carrierDailyMortalityRate': ['CARRIER', 'PATHWAY', 'PATHWAYID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
+			'pathogenDailyMortalityRate': ['CARRIER', 'PATHWAY', 'PATHWAYID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
+			'carrierDailyExitRate': ['CARRIER', 'PATHWAY', 'PATHWAYID', 'PATHWAYPOINT', 'PATHWAYPOINTID'] + months,
+			'carrierDispersal': ['CARRIER', 'SD'],
+			'transmissionRate': ['CARRIER'] + suitablity,
+		}
+
+		landCover_cols = {
+			'landSuitability': ['LANDCOVER','LANDCOVERID','SUITABILITY'],
+			'consequences': ['LANDCOVER','LANDCOVERID']+conseq
+		}
+
+
+		dataframes = {
+			name: df[cols].drop_duplicates().reset_index(drop=True)
+			for name, cols in base_cols.items()
+		}
+
+		dataframes.update({
+			'hostMortalityRate': pd.DataFrame(columns=suitablity),
+			'establishmentRate': pd.DataFrame(columns=suitablity),
+			'establishmentDetection': pd.DataFrame(columns=detection),
+			'establishmentMortalityRate': pd.DataFrame(columns=suitablity),
+			'spreadRate': pd.DataFrame(columns=suitablity)
+		})
+
+		dataframes.update({
+			name: landCover_df[cols].drop_duplicates().reset_index(drop=True)
+			for name, cols in landCover_cols.items()
+		})
+		
+		wb = Workbook()
+		wb.remove(wb.active)
+
+		for sheet_name, df in dataframes.items():
+			ws = wb.create_sheet(title=sheet_name)
+			ws.append(['ID', 'SCENARIOID']+df.columns.tolist())
+			for row in df.itertuples(index=False):
+				ws.append([None, None]+list(row))
+
+		buf = BytesIO()
+		wb.save(buf)
+		buf.seek(0)
+
+		sheet = SimpleNamespace(filename=str(Path(sheet.filename).with_suffix('.xlsx')), file=buf)
+
+		return self.addProject(sheet)
+
+
 
 		
 
@@ -719,10 +804,6 @@ class IBRAMServer(RequestUtils):
 			for scenario in scenarios:
 				self.resetScenario(scenario['id'])
 		
-			
-	@cherrypy.expose
-	def generateInput(self):
-		pass
 
 	@cherrypy.expose
 	def index(self):
@@ -751,7 +832,9 @@ class IBRAMServer(RequestUtils):
 									ui.dismissDialogs();
 								}),
 								$('<button>').text('Generate').on('click', function() {
-									//window.location.href='/generateInput'
+	 								console.log('here')
+									$('input.addDriverFile').val('');
+									$('input.addDriverFile').click();
 									ui.dismissDialogs();
 								}),
 								$('<button>').text('Cancel').on('click', ui.dismissDialogs),
@@ -780,6 +863,28 @@ class IBRAMServer(RequestUtils):
 							processData: false,
 						});
 					});
+	
+					$('input.addDriverFile').on('change', function() {
+						ui.dialog('<p>Generating, please wait...</p>');
+						var f = new FormData();
+						f.append('sheet', this.files[0], this.files[0].name);
+						$.post({
+							url: '/generateProject',
+							data: f,
+							success: (data) => {
+								data = JSON.parse(data);
+								if(data.type == 'error') {
+									dismissDialogs();
+									ui.message(data.message);
+								}
+								else {
+									window.location.href = '/project?editName=1&id='+data;
+								}
+							},
+							contentType: false,
+							processData: false,
+						});
+					});
 				});
 			"""),
 		]
@@ -793,6 +898,7 @@ class IBRAMServer(RequestUtils):
 						n('button.addProject', type='button', c='Add Project'),
 						n('button.manageParams', type='button', c='Manage Pathway Parameters'),
 						n('input.addProjectFile', type='file', style='display:none'),
+						n('input.addDriverFile', type='file', style='display:none'),
 					]),
 				),
 				),
@@ -967,7 +1073,7 @@ class IBRAMServer(RequestUtils):
 							dataName = sheetData['id'],
 							data = sheetData['table'],
 							headerLabels = sheetData['headerLabels'],
-							hidden=['id', 'scenarioId', 'itemId', 'pathwayPointId', 'landcoverId'],
+							hidden=['id', 'scenarioId', 'pathwayId', 'pathwayPointId', 'landcoverId'],
 							defaultDataCellHandler = lambda val, rowI, cellI: n('td', RawHtml(handleCellVal(val, sheetData['baseTable'][rowI][list(sheetData['table'][0].keys())[cellI]])))
 						) if sheetData.get('table') else None,
 						sheetData.get('tabExtra', ''),
@@ -993,7 +1099,7 @@ class IBRAMServer(RequestUtils):
 					o.activeSheet = o.activeSheet || 'units';
 					$('.tabSheet td div').toArray().map(el => {
 						let mgr = tableManager(el.closest('table'));
-						let readOnlys = ['item','source','subItem', 'carrier','name','pathwayPoint','landcover'];
+						let readOnlys = ['pathway','source','item', 'carrier','name','pathwayPoint','landcover'];
 						if ( !readOnlys.includes(mgr.fieldIds[el.closest('td').cellIndex]) ) {
 							el.setAttribute('contenteditable', 'true');
 						}
@@ -1091,7 +1197,7 @@ class IBRAMServer(RequestUtils):
 		outCsvFn = os.path.join(outputDir, "Entries.csv")
 		df = pd.read_csv(outCsvFn)
 		df.columns = [col.upper() for col in df.columns]
-		df = df.sort_values(by=[ 'CARRIER', 'ITEM'])
+		df = df.sort_values(by=[ 'CARRIER', 'PATHWAY'])
 		
 		# print(df)
 		
@@ -1111,8 +1217,7 @@ class IBRAMServer(RequestUtils):
 
 		# print(df)
 
-		# df = df.drop(columns=['SCENARIOID','ITEMID'])
-		df = df[['CARRIER', 'SUBITEM', 'ITEM', 'SOURCE']+val_cols]
+		df = df[['CARRIER', 'ITEM', 'PATHWAY', 'SOURCE']+val_cols]
 
 		df = df.fillna('')
 		
@@ -1406,24 +1511,24 @@ class IBRAMServer(RequestUtils):
 						n('li', n('div', n('input',
 									type='radio',
 									name='displayValue',
-									value=f'exposure_{carrier}_{item}'.replace(' ', '_'),
-									checked=stage == f'exposure_{carrier}_{item}'.replace(' ', '_') or None),
-									item),
+									value=f'exposure_{carrier}_{pathway}'.replace(' ', '_'),
+									checked=stage == f'exposure_{carrier}_{pathway}'.replace(' ', '_') or None),
+									pathway),
 							n('ul', *[
 								n('li', n('div',
 									n('input',
 									type='radio',
 									name='displayValue',
-									value=f'exposure_{carrier}_{item}_{name}'.replace(' ', '_'),
-									checked=stage == f'exposure_{carrier}_{item}_{name}'.replace(' ', '_') or None),
+									value=f'exposure_{carrier}_{pathway}_{name}'.replace(' ', '_'),
+									checked=stage == f'exposure_{carrier}_{pathway}_{name}'.replace(' ', '_') or None),
 									name))
 								for name in names
 							])
 						)
-						for item, names in items.items()
+						for pathway, names in pathways.items()
 					])
 				)
-				for carrier, items in exposureMap.items()
+				for carrier, pathways in exposureMap.items()
 			]
 		
 		def make_dispersal_nested_list():
@@ -1435,24 +1540,24 @@ class IBRAMServer(RequestUtils):
 									checked=stage == f'dispersal_{carrier}'.replace(' ', '_') or None),
 									carrier),
 				)
-				for carrier, items in exposureMap.items()
+				for carrier, pathways in exposureMap.items()
 			]
 
 
 		with serverDb() as db:
 			scenario = db.queryRow('select * from scenario where id = ?', [scenarioId])
 			project = db.queryRow('select * from project where id = ?', [scenario['projectId']])
-			exposurePoints = db.queryRows(f"""SELECT DISTINCT c.carrier, pp.item, pp.name FROM carrier c
-													LEFT JOIN pathwayPoint pp ON pp.itemId = c.itemId
+			exposurePoints = db.queryRows(f"""SELECT DISTINCT c.carrier, pp.pathway, pp.name FROM carrier c
+													LEFT JOIN pathwayPoint pp ON pp.pathwayId = c.pathwayId
 													WHERE scenarioId = ?
 								 					ORDER BY c.carrier, pp.id""", [scenarioId])
 			
 			exposureMap = {}
 			for row in exposurePoints:
 				carrier = row['carrier']
-				item = row['item']
+				pathway = row['pathway']
 				name = row['name']
-				exposureMap.setdefault(carrier, {}).setdefault(item, []).append(name)
+				exposureMap.setdefault(carrier, {}).setdefault(pathway, []).append(name)
 				
 			# print(exposureMap)
 
@@ -1599,7 +1704,7 @@ if __name__=="__main__":
 	cherrypy.quickstart(IBRAMServer(), '/', config={
 		'/': {
 			'tools.staticdir.root': os.path.abspath(os.getcwd()),
-			'tools.staticdir.content_types': {'xdsl': 'application/octet-stream'},
+			# 'tools.staticdir.content_types': {'xdsl': 'application/octet-stream'},
 			'tools.secureheaders.on': True,
 		},
 		'/_': {

@@ -109,7 +109,7 @@ async function saveScenario() {
 
 /// Pathway page parameters
 async function saveParameters() {
-	let saveTables = ['climateMaps', 'items', 'pathwayPoints'];
+	let saveTables = ['climateMaps', 'pathways', 'pathwayPoints'];
 
 	// let pestId = $('.toolbar').find('.pestSel').val();
 	// let pathwayId = $('.toolbar').find('.pathwaySel').val();
@@ -252,7 +252,7 @@ function deleteClimateMap() {
 		'Choose map to delete:', n('ul',
 			mapTableMgr.getColumnValues('name').map(v => {
 				return n('div',n('label',
-					n('input', {type: 'radio', name: 'item', value: v}),
+					n('input', {type: 'radio', name: 'pathway', value: v}),
 					v,
 				))
 			})
@@ -260,9 +260,9 @@ function deleteClimateMap() {
 	), {buttons: [
 		n('button', 'Delete', {on: {click: event => {
 			let dlg = event.target.closest('.dialog');
-			let item = dlg.querySelector('*[name=item]:checked').value;
+			let pathway = dlg.querySelector('*[name=pathway]:checked').value;
 			
-			let refRow = mapTableMgr.findRows({name: item})[0];
+			let refRow = mapTableMgr.findRows({name: pathway})[0];
 			refRow.remove();
 			dismissDialogs();
 		}}}),
@@ -270,20 +270,20 @@ function deleteClimateMap() {
 	]});
 }
 
-function addItem() {
-	let itemTableMgr = tableManager($('.tabSheet[data-name=items] .dataTable')[0]);
+function addpathway() {
+	let pathwayTableMgr = tableManager($('.tabSheet[data-name=pathways] .dataTable')[0]);
 	let $dlg = popupDialog(n('div',
-		n('h2', 'Add a new item'),
+		n('h2', 'Add a new pathway'),
 		n('div.error'),
 		n('p', 'Name: ', n('input', {name: 'name'})),
 	), {buttons: [
 		n('button', 'Add', {on: {click: event => {
 			let dlg = event.target.closest('.dialog');
-			let itemName = (dlg.querySelector('*[name=name]') || {}).value;
+			let pathwayName = (dlg.querySelector('*[name=name]') || {}).value;
 			
 			/// Check for errors
 			let errors = [];
-			if (!itemName) {
+			if (!pathwayName) {
 				errors.push('Please specify "Name".');
 			}
 			if (errors.length) {
@@ -291,12 +291,12 @@ function addItem() {
 				return;
 			}
 			
-			let refRow = itemTableMgr.getRow(itemTableMgr.numRows-1);
+			let refRow = pathwayTableMgr.getRow(pathwayTableMgr.numRows-1);
 			let newRow = refRow.cloneNode(true);
 			newRow.classList.add('new');
 			refRow.after(newRow);
-			itemTableMgr.setInnerValue(newRow, 'div',
-				'name', itemName,
+			pathwayTableMgr.setInnerValue(newRow, 'div',
+				'name', pathwayName,
 			);
 			dismissDialogs();
 		}}}),
@@ -305,16 +305,16 @@ function addItem() {
 }
 
 
-function deleteItem() {
-	let itemTableMgr = tableManager($('.tabSheet[data-name=items] .dataTable')[0]);
+function deletepathway() {
+	let pathwayTableMgr = tableManager($('.tabSheet[data-name=pathways] .dataTable')[0]);
 	let pointTableMgr = tableManager($('.tabSheet[data-name=pathwayPoints] .dataTable')[0]);
 
 	popupDialog(n('div',
-		'Choose item to delete:',
+		'Choose pathway to delete:',
 		n('ul',
-			itemTableMgr.getColumnValues('name').slice(1).map(v => {
+			pathwayTableMgr.getColumnValues('name').slice(1).map(v => {
 				return n('div', n('label',
-					n('input', { type: 'radio', name: 'item', value: v }),
+					n('input', { type: 'radio', name: 'pathway', value: v }),
 					v
 				))
 			})
@@ -325,24 +325,24 @@ function deleteItem() {
 				on: {
 					click: event => {
 						let dlg = event.target.closest('.dialog');
-						let itemName = dlg.querySelector('*[name=item]:checked').value;
+						let pathwayName = dlg.querySelector('*[name=pathway]:checked').value;
 
-						let refRow = itemTableMgr.findRows({ name: itemName })[0];
+						let refRow = pathwayTableMgr.findRows({ name: pathwayName })[0];
 
 						// Try to find the 'id' column index case-insensitively
 						let headerRow = refRow.closest('table').querySelector('thead tr');
 						let headers = Array.from(headerRow.children).map(th => th.textContent.trim().toLowerCase());
 
-						// console.log("Item table headers:", headers);
+						// console.log("pathway table headers:", headers);
 
 						let idIndex = headers.findIndex(h => h === 'id');
-						let itemId = refRow.cells[idIndex].textContent.trim();
+						let pathwayId = refRow.cells[idIndex].textContent.trim();
 
-						// Remove the item row
+						// Remove the pathway row
 						refRow.remove();
 
-						// Remove all pathwayPoints with matching itemId
-						pointTableMgr.findRows({ itemId }).forEach(row => row.remove());
+						// Remove all pathwayPoints with matching pathwayId
+						pointTableMgr.findRows({ pathwayId }).forEach(row => row.remove());
 
 						dismissDialogs();
 					}
@@ -359,13 +359,13 @@ function deleteItem() {
 
 function addPathwayPoint() {
 	let pointTableMgr = tableManager($('.tabSheet[data-name=pathwayPoints] .dataTable')[0]);
-	let itemValues = tableManager($('.tabSheet[data-name=items] .dataTable')[0]).getColumnValues('name');
+	let pathwayValues = tableManager($('.tabSheet[data-name=pathways] .dataTable')[0]).getColumnValues('name');
 
 	let beforePointContainer = n('ul'); // Empty container for beforePoint options
 
-	let updateBeforePoints = (selectedItem) => {
+	let updateBeforePoints = (selectedPathway) => {
 		beforePointContainer.innerHTML = '';
-		const matchingRows = pointTableMgr.findRows({ item: selectedItem });
+		const matchingRows = pointTableMgr.findRows({ pathway: selectedPathway });
 
 		if (matchingRows.length === 0) {
 			beforePointContainer.appendChild(
@@ -387,12 +387,12 @@ function addPathwayPoint() {
 		}
 	};
 
-	let itemList = n('ul',
-		itemValues.map(v => {
+	let pathwayList = n('ul',
+		pathwayValues.map(v => {
 			return n('div', n('label',
 				n('input', {
 					type: 'radio',
-					name: 'item',
+					name: 'pathway',
 					value: v,
 					on: {
 						change: () => updateBeforePoints(v) // FIXED: using `on: {change}`
@@ -407,7 +407,7 @@ function addPathwayPoint() {
 		n('h2', 'Add a new pathway point'),
 		n('div.error'),
 		n('p', 'Name: ', n('input', {name: 'name'})),
-		n('div', 'Select associated item:', itemList),
+		n('div', 'Select associated pathway:', pathwayList),
 		n('div', 'Add this point after:', beforePointContainer),
 		n('div', 'Geometry Type: ', 
 			n('label',n('input', {type: 'radio', name: 'geometryType', value: 'point'}),'Point'), 
@@ -421,7 +421,7 @@ function addPathwayPoint() {
 					click: event => {
 						let dlg = event.target.closest('.dialog');
 						let pointName = (dlg.querySelector('*[name=name]') || {}).value;
-						let item = (dlg.querySelector('*[name=item]:checked') || {}).value;
+						let pathway = (dlg.querySelector('*[name=pathway]:checked') || {}).value;
 						let beforePoint = (dlg.querySelector('*[name=beforePoint]:checked') || {}).value;
 						let fileInput = dlg.querySelector('*[name=filePicker]');
 						let geometryType = (dlg.querySelector('*[name=geometryType]:checked') || {}).value;
@@ -429,7 +429,7 @@ function addPathwayPoint() {
 
 						let errors = [];
 						if (!pointName) errors.push('Please specify "Name".');
-						if (!item) errors.push('Please specify an item.');
+						if (!pathway) errors.push('Please specify an pathway.');
 						if (!beforePoint) errors.push('Please specify "Add this point after".');
 						if (!geometryType) errors.push('Please specify a geometry type.');
 						if (!file) errors.push('Please specify a file.');
@@ -471,7 +471,7 @@ function addPathwayPoint() {
 
 						pointTableMgr.setInnerValue(newRow, 'div',
 							'name', pointName,
-							'item', item,
+							'pathway', pathway,
 							'tableName', file.name.replace(/\.[^/.]+$/, ''),
 							'shape', geometryType,
 							'timeAtSite', 'Normal(2,1)',
@@ -495,8 +495,8 @@ function deletePathwayPoint() {
 		'Choose point to delete:',
 		n('ul',
 			rows.map(row => {
-				const [id, name, item] = row;
-				let label = `${item}: ${name}`;
+				const [id, name, pathway] = row;
+				let label = `${pathway}: ${name}`;
 				return n('div', n('label',
 					n('input', {type: 'radio', name: 'point', value: id}),
 					label

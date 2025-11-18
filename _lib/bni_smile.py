@@ -112,9 +112,10 @@ if __name__ == '__main__':
 		updateLicense()
 
 # Try to auto-update license if smile_license.h is present
-if os.path.exists('smile_license.h'):
-	updateLicense()
-	os.unlink("smile_license.h")
+# (Disabling for now, as too problematic)
+# if os.path.exists('smile_license.h'):
+# 	updateLicense()
+# 	os.unlink("smile_license.h")
 
 if sys.platform == 'win32':
 	if sys.maxsize > 2**32:
@@ -177,6 +178,10 @@ g.intArray_NumItems.restype = ctypes.c_int
 g.intArray_NumItems.argtypes = [ctypes.POINTER(VOID)]
 g.intArray_Items.restype = ctypes.POINTER(ctypes.c_int)
 g.intArray_Items.argtypes = [ctypes.POINTER(VOID)]
+g.doubleArray_NumItems.restype = ctypes.c_int
+g.doubleArray_NumItems.argtypes = [ctypes.POINTER(VOID)]
+g.doubleArray_Items.restype = ctypes.POINTER(ctypes.c_double)
+g.doubleArray_Items.argtypes = [ctypes.POINTER(VOID)]
 g.stringArray_Items.restype = ctypes.POINTER(c_simplechar_p)
 g.stringArray_Items.argtypes = [ctypes.POINTER(VOID)]
 g.new_network.restype = ctypes.POINTER(VOID)
@@ -299,6 +304,8 @@ g.equation_GetBounds.restype = ctypes.POINTER(ctypes.c_double)
 g.equation_GetBounds.argtypes = [ctypes.POINTER(VOID)]
 g.equation_SetBounds.restype = ctypes.c_int
 g.equation_SetBounds.argtypes = [ctypes.POINTER(VOID), ctypes.c_double, ctypes.c_double]
+g.equation_ValidateEquation.restype = c_simplechar_p
+g.equation_ValidateEquation.argtypes = [ctypes.POINTER(VOID), c_simplechar_p]
 g.mau_SetExpression.restype = ctypes.c_int
 g.mau_SetExpression.argtypes = [ctypes.POINTER(VOID), c_simplechar_p]
 g.valEqEvaluation_GetMean.restype = ctypes.c_double
@@ -409,6 +416,34 @@ g.learn_bs.restype = ctypes.c_int
 g.learn_bs.argtypes = [ctypes.POINTER(VOID), c_simplechar_p, ctypes.c_int, ctypes.c_int]
 g.learn_tan.restype = ctypes.c_int
 g.learn_tan.argtypes = [ctypes.POINTER(VOID), c_simplechar_p, c_simplechar_p, ctypes.c_int]
+g.Demorgan_SetParentWeights.restype = ctypes.c_int
+g.Demorgan_SetParentWeights.argtypes = [ctypes.POINTER(VOID), ctypes.c_int, ctypes.POINTER(ctypes.c_double)]
+g.Demorgan_SetParentWeight.restype = ctypes.c_int
+g.Demorgan_SetParentWeight.argtypes = [ctypes.POINTER(VOID), ctypes.c_int, ctypes.c_double]
+g.Demorgan_GetParentWeight.restype = ctypes.c_double
+g.Demorgan_GetParentWeight.argtypes = [ctypes.POINTER(VOID), ctypes.c_int]
+g.Demorgan_GetParentWeights.restype = ctypes.POINTER(VOID)
+g.Demorgan_GetParentWeights.argtypes = [ctypes.POINTER(VOID)]
+g.Demorgan_SetParentTypes.restype = ctypes.c_int
+g.Demorgan_SetParentTypes.argtypes = [ctypes.POINTER(VOID), ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
+g.Demorgan_SetParentType.restype = ctypes.c_int
+g.Demorgan_SetParentType.argtypes = [ctypes.POINTER(VOID), ctypes.c_int, ctypes.c_int]
+g.Demorgan_GetParentType.restype = ctypes.c_int
+g.Demorgan_GetParentType.argtypes = [ctypes.POINTER(VOID), ctypes.c_int]
+g.Demorgan_GetParentTypes.restype = ctypes.POINTER(VOID)
+g.Demorgan_GetParentTypes.argtypes = [ctypes.POINTER(VOID)]
+g.Demorgan_GetTemporalParentType.restype = ctypes.c_int
+g.Demorgan_GetTemporalParentType.argtypes = [ctypes.POINTER(VOID), ctypes.c_int, ctypes.c_int]
+g.Demorgan_SetTemporalParentType.restype = ctypes.c_int
+g.Demorgan_SetTemporalParentType.argtypes = [ctypes.POINTER(VOID), ctypes.c_int, ctypes.c_int, ctypes.c_int]
+g.Demorgan_GetTemporalParentWeight.restype = ctypes.c_double
+g.Demorgan_GetTemporalParentWeight.argtypes = [ctypes.POINTER(VOID), ctypes.c_int, ctypes.c_int]
+g.Demorgan_SetTemporalParentWeight.restype = ctypes.c_int
+g.Demorgan_SetTemporalParentWeight.argtypes = [ctypes.POINTER(VOID), ctypes.c_int, ctypes.c_int, ctypes.c_double]
+g.Demorgan_GetPriorBelief.restype = ctypes.c_double
+g.Demorgan_GetPriorBelief.argtypes = [ctypes.POINTER(VOID)]
+g.Demorgan_SetPriorBelief.restype = ctypes.c_int
+g.Demorgan_SetPriorBelief.argtypes = [ctypes.POINTER(VOID), ctypes.c_double]
 # [[BINDINGS END]] - DON'T MODIFY
 
 
@@ -432,7 +467,10 @@ class Node:
 	# which would normally be utilities.)
 	# Also defined in nodedef.h
 	NATURE_NODE, CONSTANT_NODE, DECISION_NODE, UTILITY_NODE, DISCONNECTED_NODE, \
-	EQUATION_NODE, MAU_NODE, TRUTH_TABLE = list(range(1,9))
+	EQUATION_NODE, MAU_NODE, TRUTH_TABLE, DEMORGAN = list(range(1,10))
+
+	# QGeNIe arc types:
+	INHIBITOR, REQUIREMENT, CAUSE, BARRIER = list(range(0, 4))
 class Node(Node):
 	NODE_TYPE_MAP = {
 		Node.NATURE_NODE: 18, #DSL_CPT (=DSL_CHANCE|DSL_DISCRETE)
@@ -441,6 +479,7 @@ class Node(Node):
 		Node.DECISION_NODE: 17, # DSL_LIST (=DSL_DECISION|DSL_DISCRETE)
 		Node.MAU_NODE: 520, # DSL_MAU (=DSL_UTILITY|DSL_PARENTSCONTIN)
 		Node.TRUTH_TABLE: 20, # DSL_TRUTHTABLE (=DSL_DETERMINISTIC|DSL_DISCRETE)
+		Node.DEMORGAN: 82, # DSL_DEMORGAN (=DSL_CHANCE|DSL_DISCRETE|DSL_DEMORGANLOGIC)
 	}
 	NODE_TYPE_MAP_REV = {v:k for k,v in NODE_TYPE_MAP.items()}
 class Net:
@@ -1450,11 +1489,11 @@ class Node(Node):
 		
 		return self
 		
-	def setEquation(self, equationStr):
-		nd = self._gNodeDef()
+	# def setEquation(self, equationStr):
+	# 	nd = self._gNodeDef()
 		
-		self.net.needsUpdate = True
-		return g.equation_SetEquation(nd, equationStr)
+	# 	self.net.needsUpdate = True
+	# 	return g.equation_SetEquation(nd, equationStr)
 	
 	def equation(self, equationStr = None):
 		# XXX
@@ -1470,22 +1509,29 @@ class Node(Node):
 			else:
 				# Unlike equations, there is a way to get the string directly for MAUs, but this
 				# is easier/consistent.
-				if self.type() == Node.MAU_NODE:
-					node = self.net.xdsl.find('.//nodes/maux[@id="'+self.name()+'"]/expression')
-				else:
-					node = self.net.xdsl.find('.//nodes/equation[@id="'+self.name()+'"]/definition')
-				return node.text
+				try:
+					if self.type() == Node.MAU_NODE:
+						node = self.net.xdsl.find('.//nodes/maux[@id="'+self.name()+'"]/expression')
+					else:
+						node = self.net.xdsl.find('.//nodes/equation[@id="'+self.name()+'"]/definition')
+					return node.text
+				except:
+					# Return invalid equation msg if trying to get equation (e.g. if new)
+					return "<invalid equation>"
 		else:
-			
 			nd = self._gNodeDef()
+			res = 0
 			if self.type() == Node.MAU_NODE:
-				g.mau_SetExpression(nd, equationStr)
+				res = g.mau_SetExpression(nd, equationStr)
 			else:
-				# if g.equation_SetEquation(nd, equationStr) != 0: print('error', equationStr)
-				g.equation_SetEquation(nd, equationStr)
-			self._equationCache['equation'] = equationStr
+				err = g.equation_ValidateEquation(nd, equationStr)
+				if not err:
+					res = g.equation_SetEquation(nd, equationStr)
+				else:
+					raise Exception(err)
+			if res==0:
+				self._equationCache['equation'] = equationStr
 			self.net.needsUpdate = True
-			
 	
 		return self
 
@@ -1559,10 +1605,12 @@ class Node(Node):
 		gNodeValue = self._gNodeVal()
 		if state is None and value is None:
 			if self.hasFinding():
-				ev = g.valEqEvaluation_GetEvidence(gNodeValue)
 				if self.type()==Node.EQUATION_NODE:
+					ev = g.valEqEvaluation_GetEvidence(gNodeValue)
 					return ev
-				return self.state(ev)
+				else:
+					ev = g.nodeValue_GetEvidence(gNodeValue)
+					return self.state(ev)
 			else:
 				return None
 		else:
@@ -1854,6 +1902,52 @@ class Node(Node):
 		
 		# Chain
 		return self
+	
+	# DeMorgan node (QGeNIe) functions
+	def dmPriorBelief(self, belief = None):
+		dfn = self._gNodeDef()
+		if belief is not None:
+			g.Demorgan_SetPriorBelief(dfn, belief)
+		else:
+			val = g.Demorgan_GetPriorBelief(dfn)
+			return val
+		return self
+	
+	def dmParentWeights(self, weights = None):
+		dfn = self._gNodeDef()
+		numParents = len(self.parents())
+		if weights is not None:
+			# fullWeights = weights + [0]*max(0, numParents-len(weights))
+			cWeights = (ctypes.c_double*numParents)(*weights)
+			g.Demorgan_SetParentWeights(dfn, numParents, cWeights)
+		else:
+			cWeightsDblArray = g.Demorgan_GetParentWeights(dfn)
+			cWeights = g.doubleArray_Items(cWeightsDblArray)
+			numCWeights = g.doubleArray_NumItems(cWeightsDblArray)
+			weights = [0]*numCWeights
+			for i in range(numParents):
+				weights[i] = cWeights[i]
+			return weights
+
+		return self
+
+	def dmParentTypes(self, types = None):
+		dfn = self._gNodeDef()
+		numParents = len(self.parents())
+		if types is not None:
+			cTypes = (ctypes.c_int*numParents)(*types)
+			g.Demorgan_SetParentTypes(dfn, numParents, cTypes)
+		else:
+			cTypesIntArray = g.Demorgan_GetParentTypes(dfn)
+			cTypes = g.intArray_Items(cTypesIntArray)
+			numCTypes = g.intArray_NumItems(cTypesIntArray)
+			types = [0]*numCTypes
+			for i in range(numParents):
+				types[i] = cTypes[i]
+			return types
+
+		return self
+
 	
 class UserProperties(object):
 	def __init__(self, node, eId):

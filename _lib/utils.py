@@ -1,5 +1,6 @@
 import _env, json, os, xlwt, csv, csvdb
 
+from pathlib import Path
 from bidb import DB
 
 # Settings file with directories, etc.
@@ -104,9 +105,15 @@ def month(m):
 
 
 def get_equations(netFn):
-	from _lib.bni_smile import Net
-	net = Net(netFn)
-	return [net.node(n.name()).equation() for n in net.nodes()]
+	p = Path(netFn)
+	if p.suffix.lower() == ".json":
+		with p.open("r", encoding="utf-8") as f:
+			return json.load(f)
+	else:
+		print(netFn)
+		from _lib.bni_smile import Net
+		net = Net(netFn)
+		return [net.node(n.name()).equation() for n in net.nodes()]
 
 # 	model = {}
 # 	net = Net(netFn)

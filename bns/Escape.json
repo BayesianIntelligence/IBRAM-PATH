@@ -1,0 +1,9 @@
+[
+  "carrierDailyMortalityRate=Uniform(0,1)",
+  "pathogenDailyMortalityRate=Uniform(0,1)",
+  "carrierDailyExitRate=Uniform(0,1)",
+  "timeAtSite=Uniform(0,1e+07)",
+  "dailyMortalityRate=1-(1-carrierDailyMortalityRate)*(1-pathogenDailyMortalityRate)",
+  "exit=carrierDailyExitRate*(1-((1-dailyMortalityRate)*(1-carrierDailyExitRate))^timeAtSite)/(1-(1-dailyMortalityRate)*(1-carrierDailyExitRate))",
+  "survive=(1-dailyMortalityRate)^timeAtSite"
+]

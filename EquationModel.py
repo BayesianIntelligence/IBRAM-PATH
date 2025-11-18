@@ -80,6 +80,7 @@ def parse_expr(expr, vars):
 	expr = expr.replace("Bernoulli(", "np.random.binomial(1, ")
 	expr = expr.replace("Min(", "min(")
 	expr = expr.replace("Max(", "max(")
+	expr = expr.replace("Round(", "round(")
 	expr = expr.replace("^", "**")
 
 	# print(expr)
@@ -91,11 +92,13 @@ def parse_expr(expr, vars):
 
 class EquationModel:
 	def __init__(self, equations):
+		self.raw = {}
 		self.model = {}
 		self.dependencies = defaultdict(list)
 		self.samples = None
 		self.updated = False
 
+		self.raw = {eq.split("=", 1)[0].strip() : None for eq in equations}
 		self.model = {eq.split("=", 1)[0].strip() : None for eq in equations}
 		
 		for eq in equations:
@@ -110,6 +113,8 @@ class EquationModel:
 		for dep in re.findall(r'\b(' + '|'.join(re.escape(var) for var in vars) + r')\b', expr):
 			self.dependencies[dep].append(var.strip())
 					
+
+		self.raw[var.strip()] = expr
 		self.model[var.strip()] = eval(f"lambda d: {parse_expr(expr, vars)}")
 
 	def sample(self, _):
@@ -120,7 +125,7 @@ class EquationModel:
 				
 		return values
 			
-	def update(self, num_samples = 100):
+	def update(self, num_samples = 10):
 		if not self.updated:
 			self.sorted_vars = topological_sort(self.dependencies)
 			# self.samples = pd.DataFrame([self.sample() for _ in range(num_samples)])
@@ -132,6 +137,40 @@ class EquationModel:
 	def get(self, var):
 		self.update()
 		return self.samples[var]
+	
+
+	def build_model(self, eqs):
+		from _lib.bni_smile import Net, Node
+		net = Net()
+
+		for lhs, rhs in eqs.items():
+			node = net.node(lhs) if net.node(lhs) else net.addNode(lhs, Node.EQUATION_NODE)
+			node.title(node.name().replace('_',' '))
+
+		for lhs, rhs in eqs.items():
+			try:
+				node = net.node(lhs)
+				node.equation(f'{lhs}={rhs}')
+			except:
+				print(lhs, rhs)
+			
+		net.write('temp.xdsl')
+		
+		return net
+
+	def writeNet(self):
+		self.build_model(self.raw)
+		
+		# net = Net()
+		# for eq in self.raw:
+		# 	net.addNode
+		
+		# print(self.raw)
+		
+
+
+
+
 
 
 

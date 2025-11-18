@@ -1,0 +1,15 @@
+[
+  "previousPestQuantity=Uniform(0,1000)",
+  "proportionToHere=Uniform(0,1)",
+  "PestQuantityArrives=previousPestQuantity*proportionToHere",
+  "detectionRate=Uniform(0,1)",
+  "treatmentRateForUndetected=Uniform(0,1)",
+  "TreatmentRate=detectionRate+(1-detectionRate)*treatmentRateForUndetected",
+  "treatmentEfficacy=Uniform(0,1)",
+  "ProportionTreated=TreatmentRate*treatmentEfficacy",
+  "PestQuantity=PestQuantityArrives*(1-ProportionTreated)",
+  "exit=Uniform(0,1)",
+  "exposures=PestQuantity*exit",
+  "survive=Uniform(0,1)",
+  "nextPestQuantity=Trim((PestQuantity-exposures)*survive,0,1e+06)"
+]

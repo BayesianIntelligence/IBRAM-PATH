@@ -11,7 +11,7 @@ def make_entry_tables(scenarioId):
 	print('creating entry table', scenarioId)
 	
 	# preBorderNet = Net('bns/Preborder.xdsl')
-	preBorderModel = EquationModel(get_equations('bns/Preborder.xdsl'))
+	preBorderModel = EquationModel(get_equations('bns/Preborder.json'))
 	
 	with serverDb() as db:
 		
@@ -21,7 +21,7 @@ def make_entry_tables(scenarioId):
 		for index, entry in entries_df.iterrows():
 			for monthId in range(0,12):
 				month_name = month(monthId)
-				row = db.queryRow(f"""SELECT carrier.carrier, carrier.subItem, carrier.item, carrier.itemId, carrier.source,
+				row = db.queryRow(f"""SELECT carrier.carrier, carrier.item, carrier.pathway, carrier.pathwayId, carrier.source,
 									units.{month_name} AS units,
 									carrierRate.{month_name} AS carrierRate,
 									carriersPerUnit.{month_name} AS carriersPerUnit,
@@ -30,12 +30,12 @@ def make_entry_tables(scenarioId):
 									preborderDetection.treatmentRateForUndetected,
 									preborderDetection.treatmentEfficacy
 								FROM carrier
-								LEFT JOIN units ON units.subItem = carrier.subItem AND units.itemId = carrier.itemId AND units.source = carrier.source AND units.scenarioId = carrier.scenarioId
-								LEFT JOIN carrierRate ON carrierRate.carrier = carrier.carrier AND carrierRate.subItem = carrier.subItem AND carrierRate.itemId = carrier.itemId AND carrierRate.source = carrier.source AND carrierRate.scenarioId = carrier.scenarioId
-								LEFT JOIN carriersPerUnit ON carriersPerUnit.carrier = carrier.carrier AND carriersPerUnit.subItem = carrier.subItem AND carriersPerUnit.itemId = carrier.itemId AND carriersPerUnit.scenarioId = carrier.scenarioId
-								LEFT JOIN carrierInfectionRate ON carrierInfectionRate.carrier = carrier.carrier AND carrierInfectionRate.subItem = carrier.subItem AND carrierInfectionRate.itemId = carrier.itemId AND carrierInfectionRate.source = carrier.source AND carrierInfectionRate.scenarioId = carrier.scenarioId
-								LEFT JOIN preborderDetection ON preborderDetection.carrier = carrier.carrier AND preborderDetection.subItem = carrier.subItem AND preborderDetection.itemId = carrier.itemId AND preborderDetection.source = carrier.source AND preborderDetection.scenarioId = carrier.scenarioId
-								WHERE carrier.scenarioId = ? AND carrier.carrier = ? AND carrier.subItem = ? AND carrier.item = ? AND carrier.itemId = ? AND carrier.source = ?""", [entry['scenarioId'], entry['carrier'], entry['subItem'], entry['item'], entry['itemId'], entry['source']])
+								LEFT JOIN units ON units.item = carrier.item AND units.pathwayId = carrier.pathwayId AND units.source = carrier.source AND units.scenarioId = carrier.scenarioId
+								LEFT JOIN carrierRate ON carrierRate.carrier = carrier.carrier AND carrierRate.item = carrier.item AND carrierRate.pathwayId = carrier.pathwayId AND carrierRate.source = carrier.source AND carrierRate.scenarioId = carrier.scenarioId
+								LEFT JOIN carriersPerUnit ON carriersPerUnit.carrier = carrier.carrier AND carriersPerUnit.item = carrier.item AND carriersPerUnit.pathwayId = carrier.pathwayId AND carriersPerUnit.scenarioId = carrier.scenarioId
+								LEFT JOIN carrierInfectionRate ON carrierInfectionRate.carrier = carrier.carrier AND carrierInfectionRate.item = carrier.item AND carrierInfectionRate.pathwayId = carrier.pathwayId AND carrierInfectionRate.source = carrier.source AND carrierInfectionRate.scenarioId = carrier.scenarioId
+								LEFT JOIN preborderDetection ON preborderDetection.carrier = carrier.carrier AND preborderDetection.item = carrier.item AND preborderDetection.pathwayId = carrier.pathwayId AND preborderDetection.source = carrier.source AND preborderDetection.scenarioId = carrier.scenarioId
+								WHERE carrier.scenarioId = ? AND carrier.carrier = ? AND carrier.item = ? AND carrier.pathway = ? AND carrier.pathwayId = ? AND carrier.source = ?""", [entry['scenarioId'], entry['carrier'], entry['item'], entry['pathway'], entry['pathwayId'], entry['source']])
 				
 
 				for node in 'units,carrierRate,carriersPerUnit,infectionRate,detectionRate,treatmentRateForUndetected,treatmentEfficacy'.split(','):
