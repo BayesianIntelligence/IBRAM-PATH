@@ -50,6 +50,16 @@ class IBRAMServer(RequestUtils):
 
 	@cherrypy.expose
 	def projectList(self):
+		
+		projectList = []
+		for scenario in ['Liberibacter','SOD','SpongyMoth','Queensland FF']:
+			projectList.append(n('div.project',
+						n('a', href='/scenarioOutput?scenarioId={}'.format(scenario), c=toHtml(scenario)),
+						n('span.runStatus', ['Needs Updates','Running Scenarios...','Updated'][2]),
+			))
+		return ''.join(str(n) for n in projectList)
+			
+
 		with serverDb() as db:
 			projects = db.query('select id, name from project order by name')
 
@@ -342,51 +352,117 @@ class IBRAMServer(RequestUtils):
 				).str()	
 
 
+	# @cherrypy.expose
+	# def getSummaryTable(self, scenarioId):
+
+				
+	@cherrypy.expose
+	def generateAggregations(self, scenarioId):
+		def normalise_month_keys(d):
+			out = {}
+			for k, v in d.items():
+				if re.match(r'^[A-Z]{3}$', k):   # JAN, FEB, etc
+					out[f"{k}_1"] = v
+					out[f"{k}_2"] = v
+				else:
+					out[k] = v
+			return out		
+
+		scenarioDir = Path('outputs', str(scenarioId))
+		vars = [f.stem for f in Path("outputs",scenarioId).glob("*.csv")]
+		# months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC','ANNUAL']
+	
+		data = []
+		for stage in vars:
+			try:
+				row = {}
+				row['stage'] = stage
+				row |= json.loads(self.getMapData(scenarioId, stage, 0))['totals']
+				row = normalise_month_keys(row)
+				# print(row)
+				data.append(row)
+			except:
+				print('fail', stage)
+		df = pd.DataFrame(data)
+		print(df)
+		df.to_csv(os.path.join(scenarioDir, 'summary.csv'), index=False)
+
+
+	@cherrypy.expose
+	def aggrOutput(self, scenarioId, token = None):
+		scenarioDir = Path('outputs', str(scenarioId))
+		self.generateAggregations(scenarioId)
+		cherrypy.response.cookie['fileDownloadToken'] = token
+		cherrypy.response.headers['Content-type'] = 'application/vnd.ms-excel'
+		cherrypy.response.headers['Content-disposition'] = 'attachment; filename="{}"'.format('summary.csv')
+		
+		return open(os.path.join(scenarioDir, 'summary.csv'),'rb').read()
+
 	@cherrypy.expose
 	def getMapData(self, scenarioId, stage, month):
 		print(scenarioId, stage, month)
 		
 		def getScenarioMapData(scenarioId, stage, month):
-			scenarioDir = utils.getOutputDir(scenarioId)
+			scenarioDir = Path('outputs', str(scenarioId))
+			# print(scenarioDir)
 			month = int(month)
+			year = 1 + month//12
+
 
 			fn = os.path.join('inputs', 'maps', '7kmHexNZ.csv')
 			df_hex = pd.read_csv(fn)
 
 			fn = os.path.join(scenarioDir, f'{stage}.csv')
-			df = pd.read_csv(fn).set_index('Code')
+			df = pd.read_csv(fn).set_index('Code').fillna(0)
+			
 
-			min_val = 0.0#float(df.min().min())
+			min_val = float(df.min().min())
 			max_val = float(df.max().max())
+			totals = df.sum().to_dict()
+			totals['ANNUAL'] = float(df.sum().sum())
 
 			df = pd.merge(df, df_hex, on='Code', how='inner').set_index('Code')
 			df = df[df['area'] > 20]
 
-			col = utils.month(month) if len(stage.split('_')) > 1 else f'{stage}_{month}'
+			if stage in ['quantity','establish','spread','consequence_econ','consequence_environ','consequence_social','consequence_health']:
+				col = f"{utils.month(month)}_{year}"
+			else:
+				col = utils.month(month)
+			
+			# print(stage)
+			# print(df)
 			df = df[[col, 'Name']].rename(columns={col: 'val'})
 
 			df['val'] = df['val'].apply(lambda x: float(x) if pd.notna(x) else None)
 			df['Name'] = df['Name'].astype(str)
+			
+
+			df = df.groupby(level=0).agg({'val': 'mean', 'Name': 'first'})
 
 			mapData = df.to_dict(orient='index')
-			return mapData, min_val, max_val
+
+
+			mapData = df.to_dict(orient='index')
+			return mapData, min_val, max_val, totals
 
 				
 
-		with serverDb() as db:
-			scenario = db.queryRow('SELECT projectId FROM scenario WHERE id = ?', [scenarioId])
-			baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])
+		# with serverDb() as db:
+		# 	scenario = db.queryRow('SELECT projectId FROM scenario WHERE id = ?', [scenarioId])
+		# 	baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])
 			
+		baseScenarioId = scenarioId
 
 		baseMapData = getScenarioMapData(baseScenarioId, stage, month)
-		mapData, min, max = getScenarioMapData(scenarioId, stage, month)
+		mapData, min, max, totals = getScenarioMapData(scenarioId, stage, month)
 
 		cherrypy.response.headers['Content-Type'] = 'application/json'
 		return json.dumps({
 			'mapData': mapData,
 			'baseMapData': baseMapData,
 			'min': min,
-			'max': max
+			'max': max,
+			'totals': totals
 	
 		}).encode('utf-8')
 	
@@ -809,6 +885,7 @@ class IBRAMServer(RequestUtils):
 	def index(self):
 		projectList = self.projectList()
 		
+		
 		head = [
 			n('script', """
 				$(document).ready(function() {
@@ -1190,34 +1267,16 @@ class IBRAMServer(RequestUtils):
 	
 
 	@cherrypy.expose
-	def getTableData(self, scenarioId, tableDiff):
+	def getTableData(self, scenarioId, stage, tableDiff):
 		val_cols = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 
-		outputDir = f'outputs/scenario{scenarioId}'
-		outCsvFn = os.path.join(outputDir, "Entries.csv")
-		df = pd.read_csv(outCsvFn)
-		df.columns = [col.upper() for col in df.columns]
-		df = df.sort_values(by=[ 'CARRIER', 'PATHWAY'])
-		
-		# print(df)
-		
-		if tableDiff == '1':
-			with serverDb() as db:
-				scenario = db.queryRow('select projectId from scenario where id = ?', [scenarioId])
-				baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])
+		# if stage == 'summary':
+		# 	df = self.getSummaryTable(scenarioId)
+		# else:
+		outCsvFn = f"outputs/{scenarioId}/{stage}.csv"
+		df = pd.read_csv(outCsvFn).dropna(how="all")
 			
-			base_outputDir = f'outputs/scenario{baseScenarioId}'
-			base_outCsvFn = os.path.join(base_outputDir, "Entries.csv")
-			base_df = pd.read_csv(base_outCsvFn)
-			base_df.columns = [col.upper() for col in base_df.columns]
-				
-			diff_df = df.copy()
-			diff_df[val_cols] = df[val_cols] - base_df[val_cols]
-			df = diff_df
-
-		# print(df)
-
-		df = df[['CARRIER', 'ITEM', 'PATHWAY', 'SOURCE']+val_cols]
+		df.columns = [col.upper() for col in df.columns]
 
 		df = df.fillna('')
 		
@@ -1245,14 +1304,16 @@ class IBRAMServer(RequestUtils):
 	
 
 	@cherrypy.expose
-	def outputTable(self, scenarioId, tableDiff=False):
-		with serverDb() as db:
-			scenario = db.queryRow('select isBase, projectId from scenario where id = ?', [scenarioId])
-			isBase = scenario['isBase']			
-		
+	def outputTable(self, scenarioId, stage, tableDiff=False):
+		# with serverDb() as db:
+		# 	scenario = db.queryRow('select isBase, projectId from scenario where id = ?', [scenarioId])
+		# 	isBase = scenario['isBase']			
+
+		isBase = True
 		# print(isBase)
 		
-		tableHtml = self.getTableData(scenarioId, tableDiff)
+		tableHtml = self.getTableData(scenarioId, stage, tableDiff)
+		
 		
 		body = n('script', """	
 			var scenarioId = """+json.dumps(scenarioId)+""";
@@ -1292,12 +1353,15 @@ class IBRAMServer(RequestUtils):
 
 	@cherrypy.expose
 	def outputMap(self, scenarioId, month = None, stage = None):
-		with serverDb() as db:			
-			scenario = db.queryRow('select isBase, projectId from scenario where id = ?', [scenarioId])
-			isBase = scenario['isBase']
-			baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])
+		# with serverDb() as db:			
+		# 	scenario = db.queryRow('select isBase, projectId from scenario where id = ?', [scenarioId])
+		# 	isBase = scenario['isBase']
+		# 	baseScenarioId = db.queryValue('select id from scenario where projectId = ? and isBase', [scenario['projectId']])
 		
 		# print(isBase)
+		
+		baseScenarioId = 1
+		isBase = True
 		
 		monthsShort = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')
 		allMonths = [monthsShort[i%len(monthsShort)] for i in range(24)]
@@ -1313,6 +1377,7 @@ class IBRAMServer(RequestUtils):
 			n('button', type='button', onclick='zoomMap({reset: true})', c='Reset View'),
 			n('button', type='button', onclick='toggleBorders()', c='Toggle Borders'),
 			n('button.diffToggle', type='button', onclick='toggleMapDifference(this)', c='Show Difference From Base') if not isBase else '',
+			n('button', onclick=toHtml('aggrOutput()'), c='Aggregate Outputs'),
 		])
 		
 		bottomMapControls = n('div.mapControls.bottom', [dateControl])
@@ -1368,6 +1433,10 @@ class IBRAMServer(RequestUtils):
 					$(button).text('Show Difference from Base');
 				}
 				updateMap();
+			}
+						
+			function aggrOutput() {
+				location.href=`/aggrOutput?scenarioId=${scenarioId}`;
 			}
 			
 			
@@ -1498,7 +1567,12 @@ class IBRAMServer(RequestUtils):
 
 
 	@cherrypy.expose
-	def scenarioOutput(self, scenarioId, type = 'map', locationCode = None, month = 0, stage = 'pests'):
+	def statsPanel(self):
+		body = n('div.panel.statsPanel',)
+		return str(body)
+		
+	@cherrypy.expose
+	def scenarioOutput(self, scenarioId, type = 'map', locationCode = None, month = 0, stage = 'quantity'):
 		def make_exposure_nested_list():
 			return [
 				n('li', n('div', n('input',
@@ -1541,37 +1615,76 @@ class IBRAMServer(RequestUtils):
 									carrier),
 				)
 				for carrier, pathways in exposureMap.items()
+			]		
+		
+		def make_var_list():
+			priority = {
+				"entry_items": 0,
+				"entry_hosts": 0.5,
+				"infected_items": 1,
+				"infected_hosts": 1.5,
+				"exposures": 3,
+				"dispersal": 4,
+				"hosted": 5,
+				"quantity": 6, 
+				"estab": 7,
+				"spread": 8,
+				"consequence": 9,
+				
+				"pathway": 10,
+			}
+			
+			def sort_key(x):
+				for k, v in priority.items():
+					if x.startswith(k):
+						return (v, x)
+				return (99, x)
+			
+			vars = [f.stem for f in Path("outputs",scenarioId).glob("*.csv")]
+			vars = sorted(vars, key=sort_key)
+			
+			# print(vars)
+			return [
+				n('li', n('div', n('input',
+									type='radio',
+									name='displayValue',
+									value=f'{var}'.replace(' ', '_'),
+									checked=stage == f'{var}'.replace(' ', '_') or None),
+									var.replace(' ', '_')),
+				)
+				for var in vars
 			]
 
 
 		with serverDb() as db:
-			scenario = db.queryRow('select * from scenario where id = ?', [scenarioId])
-			project = db.queryRow('select * from project where id = ?', [scenario['projectId']])
-			exposurePoints = db.queryRows(f"""SELECT DISTINCT c.carrier, pp.pathway, pp.name FROM carrier c
-													LEFT JOIN pathwayPoint pp ON pp.pathwayId = c.pathwayId
-													WHERE scenarioId = ?
-								 					ORDER BY c.carrier, pp.id""", [scenarioId])
+			# scenario = db.queryRow('select * from scenario where id = ?', [scenarioId])
+			# project = db.queryRow('select * from project where id = ?', [scenario['projectId']])
+			# exposurePoints = db.queryRows(f"""SELECT DISTINCT c.carrier, pp.pathway, pp.name FROM carrier c
+			# 										LEFT JOIN pathwayPoint pp ON pp.pathwayId = c.pathwayId
+			# 										WHERE scenarioId = ?
+			# 					 					ORDER BY c.carrier, pp.id""", [scenarioId])
 			
-			exposureMap = {}
-			for row in exposurePoints:
-				carrier = row['carrier']
-				pathway = row['pathway']
-				name = row['name']
-				exposureMap.setdefault(carrier, {}).setdefault(pathway, []).append(name)
+			# exposureMap = {}
+			# for row in exposurePoints:
+			# 	carrier = row['carrier']
+			# 	pathway = row['pathway']
+			# 	name = row['name']
+			# 	exposureMap.setdefault(carrier, {}).setdefault(pathway, []).append(name)
 				
-			# print(exposureMap)
+			# # print(exposureMap)
 
 
-			if type == 'table':
-				output = self.outputTable(scenarioId)
+			if stage.startswith(("entry", "infect")):
+				output = self.outputTable(scenarioId, stage = stage)
 			elif type == 'map':
 				output = self.outputMap(scenarioId, month = month, stage = stage)
 			else:
 				output = self.outputTimeLine(scenarioId, locationCode = locationCode, stage = stage)
 
+
 			head = [
 				n('script', '''
-				var projectId = '''+json.dumps(scenario['projectId'])+''';
+				var projectId = 1;
 				var scenarioId = '''+json.dumps(scenarioId)+''';
 				var outputType = '''+json.dumps(type)+''';
 							
@@ -1594,43 +1707,45 @@ class IBRAMServer(RequestUtils):
 			]
 
 			body = [
-				n('h2', project['name']),
-				n('h2', dataFieldEdit='/scenarioNameUpd?id={}&name='.format(id), c=n('span.value',toHtml(scenario['name']))),
+				# n('h2', 'name'),
+				# n('h2', dataFieldEdit='/scenarioNameUpd?id={}&name='.format(id), c=n('span.value',toHtml('name'))),
+				n('h2', scenarioId),
 				n('div.controls', []),
 				n('div.outputPanels', c=[
 					n('div.sideBar', c=[
 						n('section',
 							n('ul.displayValues',
-								n('li', n('div', n('h3', 'Preborder')),
-									n('li', n('div', n('input', type='radio', name='displayValue', value='entry', checked=stage=='entry' or None), 'Entry')),
-								),
-		 						n('li', n('div', n('h3', 'Habitat Suitability')),
-										n('li', n('div', n('input', type='radio', name='displayValue', value='cs', checked=stage=='cs' or None), 'Climate Suitability')),
-										n('li', n('div', n('input', type='radio', name='displayValue', value='ls', checked=stage=='ls' or None), 'Land Suitability')),
-										n('li', n('div', n('input', type='radio', name='displayValue', value='hs', checked=stage=='hs' or None), 'Habitat Suitability')),
-								),
-								n('li', n('div', n('h3', 'Exposure')), *make_exposure_nested_list()),
-								n('li', n('div', n('h3', 'Dispersal')), *make_dispersal_nested_list()),
-								n('li', n('div', n('h3', 'Establishment')),
-									n('li', n('div', n('input', type='radio', name='displayValue', value='pests', checked=stage=='pests' or None), 'Pests')),
-									n('li', n('div', n('input', type='radio', name='displayValue', value='establish', checked=stage=='establish' or None), 'Establishment')),
-									n('li', n('div', n('input', type='radio', name='displayValue', value='spread', checked=stage=='spread' or None), 'Spread')),
-								),
-								n('li', n('div', n('h3', 'Conseqences')),
-									n('li', n('div', n('input', type='radio', name='displayValue', value='econConseq', checked=stage=='econConseq' or None), 'Economic')),
-									n('li', n('div', n('input', type='radio', name='displayValue', value='environConseq', checked=stage=='environConseq' or None), 'Environment')),
-									n('li', n('div', n('input', type='radio', name='displayValue', value='healthConseq', checked=stage=='healthConseq' or None), 'Health')),
-									n('li', n('div', n('input', type='radio', name='displayValue', value='socialConseq', checked=stage=='socialConseq' or None), 'Social')),
-								),
+								# n('li', n('div', n('h3', 'Preborder')),
+								# 	n('li', n('div', n('input', type='radio', name='displayValue', value='entry', checked=stage=='entry' or None), 'Entry')),
+								# ),
+		 						# n('li', n('div', n('h3', 'Habitat Suitability')),
+								# 		n('li', n('div', n('input', type='radio', name='displayValue', value='cs', checked=stage=='cs' or None), 'Climate Suitability')),
+								# 		n('li', n('div', n('input', type='radio', name='displayValue', value='ls', checked=stage=='ls' or None), 'Land Suitability')),
+								# 		n('li', n('div', n('input', type='radio', name='displayValue', value='hs', checked=stage=='hs' or None), 'Habitat Suitability')),
+								# ),
+								n('li', n('div', n('h3', 'Vars')), *make_var_list()),
+								# n('li', n('div', n('h3', 'Dispersal')), *make_dispersal_nested_list()),
+								# n('li', n('div', n('h3', 'Establishment')),
+								# 	n('li', n('div', n('input', type='radio', name='displayValue', value='pests', checked=stage=='pests' or None), 'Pests')),
+								# 	n('li', n('div', n('input', type='radio', name='displayValue', value='establish', checked=stage=='establish' or None), 'Establishment')),
+								# 	n('li', n('div', n('input', type='radio', name='displayValue', value='spread', checked=stage=='spread' or None), 'Spread')),
+								# ),
+								# n('li', n('div', n('h3', 'Conseqences')),
+								# 	n('li', n('div', n('input', type='radio', name='displayValue', value='econConseq', checked=stage=='econConseq' or None), 'Economic')),
+								# 	n('li', n('div', n('input', type='radio', name='displayValue', value='environConseq', checked=stage=='environConseq' or None), 'Environment')),
+								# 	n('li', n('div', n('input', type='radio', name='displayValue', value='healthConseq', checked=stage=='healthConseq' or None), 'Health')),
+								# 	n('li', n('div', n('input', type='radio', name='displayValue', value='socialConseq', checked=stage=='socialConseq' or None), 'Social')),
+								# ),
 							)
 						),
 					]),
 					n('div.main.scrollable', c=RawHtml(output)),
+					RawHtml(self.statsPanel()),	
 				]),
 			]
 			
 			return runFileTemplate('basic.html', head = head, body = body, trail = [
-				n('li',n('a', href='/project?id={}'.format(scenario['projectId']), c=[n('i', Class="fas fa-fw fa-bug"), 'Project'])),
+				#n('li',n('a', href='/project?id={}'.format(1), c=[n('i', Class="fas fa-fw fa-bug"), 'Project'])),
 				n('li', n('i', Class="fas fa-fw fa-chart-bar"), 'Output'),
 			])
 			

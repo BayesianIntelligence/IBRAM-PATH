@@ -99,7 +99,7 @@ def mergeExposureCsvs(csvFns, outCsvFn, weights = None, gran = 0, fields = ['uEx
 	
 
 def month(m):
-	months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")
+	months = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".upper().split(" ")
 	return months[m%12]
 
 

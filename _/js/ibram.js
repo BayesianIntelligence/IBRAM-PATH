@@ -715,6 +715,7 @@ async function updateMap() {
 		scaleMax: maxVal,
 		scaleType: mapDiff ? 'diff' : 'abs'
 	});
+	loadStats();
 }
 
 
@@ -921,4 +922,163 @@ async function updateScenarioList() {
 	const response = await fetch(`/scenarioList?projectId=${projectId}`);
 	const scenarioHtml = await response.text();
 	document.querySelector('.scenarioList').innerHTML = scenarioHtml;
+}
+
+
+
+async function loadStats() {
+
+	let params = getCurrentParameters();
+	
+	stage = params.stage;
+	month = params.month;
+
+	let mapData = await $.getJSON('/getMapData', { scenarioId, stage, month });
+	//let mapData = await $.getJSON('/getMapData', { region, model, nodeName});
+
+	mapData = mapData['mapData']
+
+
+	let data = Object.values(mapData)
+		.map(d => d.val)
+		//.filter(v => v !== 0 && v != null && !Number.isNaN(v))
+		.filter(v => v != null && !Number.isNaN(v))
+		.sort((a, b) => a - b);
+
+
+	console.log(data)
+	let stats = computeStats(data);
+	//console.log(stats)
+	renderStats(stats);
+}
+
+function computeStats(data) {
+	data = data.slice().sort((a,b) => a-b);
+
+	let n = data.length;
+
+	let total = data.reduce((a, v) => a + v, 0);
+	let mean = total / n;
+
+	let min = Math.min(...data);
+	let max = Math.max(...data);
+	let range = max - min;
+
+	let variance = data.reduce((a, v) => a + (v - mean) ** 2, 0) / n;
+	let sd = Math.sqrt(variance);
+
+	let cum = 0;
+	let sumRE = 0;
+
+	let pcRecords = [0];
+	let pcData = [0];
+
+	for (let i=0;i<n;i++) {
+
+		let v = data[i];
+
+		cum += v;
+		sumRE += (i+1)*v;
+
+		pcRecords.push((i+1)/n*100);
+		pcData.push(cum/total);
+	}
+
+	let gini = (2*sumRE)/(n*cum) - (n+1)/n;
+
+	return {min, max, mean, sd, total, gini, pcRecords, pcData};
+}
+
+
+function drawLorenzChart(stats) {
+	// console.log(stats)
+
+	const labels = stats.pcRecords.map((_, i) =>
+		Math.round(i / (stats.pcRecords.length - 1) * 100)
+	);
+
+	new Chart(document.getElementById('lorenzChart'), {
+		type: 'line',
+		data: {
+			labels: labels,
+			datasets: [{
+				data: stats.pcData,
+				pointRadius: 0,
+				borderWidth: 2
+			}]
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+
+			legend: { display: false },   // <-- moved out of plugins
+
+			scales: {
+				x: {
+					ticks: {
+						callback: v => v + '%'
+					}
+				},
+				y: {
+					min: 0,
+					max: 1,
+					ticks: {
+						callback: v => Math.round(v * 100) + '%'
+					}
+				}
+			}
+		}
+	});
+}
+
+
+function renderStats(stats) {
+	//return
+	console.log(stats)
+
+	if (Number.isNaN(stats.mean)) {
+		$('.statsPanel').empty();
+		return;
+	}
+
+	const hasGini = stats.gini != null && !Number.isNaN(stats.gini);
+
+	$('.statsPanel').html(`
+		<div class="statsSummary">
+
+			<div class="statCard">
+				<div class="statGroupTitle">Distribution</div>
+				<div class="statGrid">
+					<div class="statPair">
+						<div class="statLabel">Total</div>
+						<div class="statValue">${sigFig(stats.total, 3)}</div>
+					</div>
+					<div class="statPair">
+						<div class="statLabel">Mean</div>
+						<div class="statValue">${sigFig(stats.mean, 3)}</div>
+					</div>
+					<div class="statPair">
+						<div class="statLabel">SD</div>
+						<div class="statValue">${sigFig(stats.sd, 3)}</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="statCard">
+				<div class="statGroupTitle">Inequality</div>
+				<div class="statPair">
+					<div class="statLabel">Gini coefficient</div>
+					<div class="statValue">${hasGini ? sigFig(stats.gini, 3) : ''}</div>
+				</div>
+			</div>
+
+		</div>
+
+		<div class="statsChart">
+			<canvas id="lorenzChart"></canvas>
+		</div>
+	`);
+	// if(hasGini) {
+	drawLorenzChart(stats);
+	// }
 }
